@@ -1,4 +1,4 @@
-\documentclass[english,sigconf,nonacm,natbib=false,balance=false,screen,review]{acmart}
+\documentclass[english,sigconf,nonacm,natbib=false,urlbreakonhyphens=false,balance=false,screen,review]{acmart}
 \usepackage{babel}
 \usepackage{csquotes}
 \usepackage{hyperref}
@@ -19,11 +19,13 @@
 }
 \email{jan.reimer@student.uni-halle.de}
 
+\nocite{*} % TODO Remove before publishing.
+
 \begin{document}
 
 \begin{abstract}
-    Pretrained encoders like BERT are commonly used for summarizing text. \citeauthor{DBLP:conf/emnlp/LiuL19} introduce models for extractive and abstractive summarization based on the pretrained BERT model~\cite{DBLP:conf/emnlp/LiuL19}.
-    We reproduce their models and experiments on the \href{https://fluxml.ai/}{Flux} framework.
+    Pretrained encoders like BERT are commonly used for summarizing text. \citeauthor{LiuL2019} introduce models for extractive and abstractive summarization based on the pretrained BERT model~\cite{LiuL2019}.
+    We reproduce their models and experiments on the Flux~\cite{InnesSFGRJKPS2018} framework.
 \end{abstract}
 
 \maketitle
