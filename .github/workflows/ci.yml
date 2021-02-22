@@ -1,12 +1,12 @@
-name: "CI"
+name: CI
 
 on:
   push:
 
 jobs:
-  build:
+  build-latex:
     name: "🏗️ LaTeX build"
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: "📥 Check-out"
         uses: actions/checkout@v2
@@ -20,3 +20,62 @@ jobs:
         with:
           path: paper/paper.pdf
           name: Paper
+  build-julia:
+    name: "🧪 Test"
+    runs-on: ubuntu-20.04
+    steps:
+      - name: "📥 Check-out"
+        uses: actions/checkout@v2
+      - name: "🧰 Install Julia"
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: "1.5"
+      - name: "💾 Cache artifacts"
+        uses: actions/cache@v1
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-test-${{ env.cache-name }}-
+            ${{ runner.os }}-test-
+            ${{ runner.os }}-
+      - name: "🏗️ Build package"
+        uses: julia-actions/julia-buildpkg@v1
+  test-julia:
+    name: "🧪 Test"
+    runs-on: ubuntu-20.04
+    needs:
+      - build-julia
+    steps:
+      - name: "📥 Check-out"
+        uses: actions/checkout@v2
+      - name: "🧰 Install Julia"
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: "1.5"
+      - name: "💾 Cache artifacts"
+        uses: actions/cache@v1
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-test-${{ env.cache-name }}-
+            ${{ runner.os }}-test-
+            ${{ runner.os }}-
+      - name: "🧪 Run tests"
+        uses: julia-actions/julia-runtest@v1
+      - name: "📊 Process test coverage"
+        uses: julia-actions/julia-processcoverage@v1
+      - name: "📤 Upload test coverage"
+        uses: actions/upload-artifact@v2
+        with:
+          path: lcov.info
+          name: Julia test coverage
+      - name: "📤 Publish test coverage"
+        uses: codecov/codecov-action@v1
+        with:
+          file: lcov.info
