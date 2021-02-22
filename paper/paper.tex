@@ -1,10 +1,13 @@
-\documentclass[english,sigconf,nonacm,screen,review]{acmart}
+\documentclass[english,sigconf,nonacm,natbib=false,balance=false,screen,review]{acmart}
 \usepackage{babel}
+\usepackage{csquotes}
 \usepackage{hyperref}
+\usepackage[style=alphabetic]{biblatex}
+\addbibresource{paper.bib}
 
 \title{Reproducing Text Summarization with Pretrained Encoders}
 \author{Jan Heinrich Reimer}
-\orcid{}
+\orcid{0000-0003-1992-8696}
 \affiliation{
     \institution{Martin Luther University Halle-Wittenberg}
     % \department{Institute for Computer Science}
@@ -19,10 +22,12 @@
 \begin{document}
 
 \begin{abstract}
-    Pretrained encoders like BERT are commonly used for summarizing text. Liu and Lapata introduce models for extractive and abstractive summarization based on the pretrained BERT model.
+    Pretrained encoders like BERT are commonly used for summarizing text. \citeauthor{DBLP:conf/emnlp/LiuL19} introduce models for extractive and abstractive summarization based on the pretrained BERT model.
     We reproduce their models and experiments on the \href{https://fluxml.ai/}{Flux} framework.
 \end{abstract}
 
 \maketitle
+
+\printbibliography
 
 \end{document}
