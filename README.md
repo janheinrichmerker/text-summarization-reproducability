@@ -1,4 +1,4 @@
-# 📝 text-summarization-bert-reproducability
+# 📝 text-summarization-reproducability
 
 Reproducability study on the ["Text Summarization with Pretrained Encoders"](https://doi.org/10.18653/v1/D19-1387) paper by Yang Liu and Mirella Lapata.
 In contrast to [the original implementation](https://github.com/nlpyang/PreSumm), we use the [Julia Language](https://julialang.org/) with [Flux.jl](https://fluxml.ai/) and [Transformers.jl](https://github.com/chengchingwen/Transformers.jl) for building the model. 
