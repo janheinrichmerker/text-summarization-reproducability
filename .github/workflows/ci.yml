@@ -13,15 +13,18 @@ jobs:
       - name: "🏗️ Update TeX Live manager"
         uses: xu-cheng/texlive-action/small@v1
         with:
-          run: tlmgr update --all
+          run: |
+            tlmgr update --all
       - name: "🏗️ Install LaTeX packages"
         uses: xu-cheng/texlive-action/small@v1
         with:
-          run: tlmgr install acmart amscls amsfonts amsmath babel booktabs biber biblatex caption comment cm-super cmap csquotes draftwatermark environ etex etoolbox fancyhdr float fontaxes geometry graphics hyperref hyperxmp iftex inconsolata kastrup latex libertine listings logreq microtype mmap ms mweights ncctools newtx oberdiek preprint refcount setspace textcase totpages trimspaces upquote url xcolor xkeyval xstring
+          run: |
+            tlmgr install acmart amscls amsfonts amsmath babel booktabs biber biblatex caption comment cm-super cmap csquotes draftwatermark environ etex etoolbox fancyhdr float fontaxes geometry graphics hyperref hyperxmp iftex inconsolata kastrup latex libertine listings logreq microtype mmap ms mweights ncctools newtx oberdiek preprint refcount setspace textcase totpages trimspaces upquote url xcolor xkeyval xstring
       - name: "🏗️ Build LaTeX class"
         uses: xu-cheng/texlive-action/small@v1
         with:
-          run: latexmk ./paper/paper.tex -pdf
+          run: |
+            latexmk ./paper/paper.tex -pdf
       - name: "📤 Upload paper"
         uses: actions/upload-artifact@v2
         with:
