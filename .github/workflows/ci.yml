@@ -21,7 +21,7 @@ jobs:
           path: paper/paper.pdf
           name: Paper
   build-julia:
-    name: "🧪 Test"
+    name: "🏗️ Julia build"
     runs-on: ubuntu-20.04
     steps:
       - name: "📥 Check-out"
@@ -44,7 +44,7 @@ jobs:
       - name: "🏗️ Build package"
         uses: julia-actions/julia-buildpkg@v1
   test-julia:
-    name: "🧪 Test"
+    name: "🧪 Julia test"
     runs-on: ubuntu-20.04
     needs:
       - build-julia
