@@ -1,3 +1,5 @@
+[![GitHub Actions](https://img.shields.io/github/workflow/status/heinrichreimer/text-summarization-reproducability/CI?style=flat-square)](https://github.com/heinrichreimer/text-summarization-reproducability/actions?query=workflow%3A"CI")
+
 # 📝 text-summarization-reproducability
 
 Reproducability study on the ["Text Summarization with Pretrained Encoders"](https://doi.org/10.18653/v1/D19-1387) paper by Yang Liu and Mirella Lapata.
