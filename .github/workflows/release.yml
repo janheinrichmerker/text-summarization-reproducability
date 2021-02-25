@@ -33,22 +33,7 @@ jobs:
     steps:
       - name: "📥 Check-out"
         uses: actions/checkout@v2
-      - name: "🏷️ Get version tag"
-        id: get-version
-        run: echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
-      - name: "✏️ Generate changelog"
-        id: generate-changelog
-        if: runner.os == 'Linux'
-        uses: heinrichreimer/action-github-changelog-generator@v2
-        with:
-          onlyLastTag: "true"
-          stripHeaders: "true"
-          stripGeneratorNotice: "true"
-      - name: "📤 Upload changelog"
-        uses: actions/upload-artifact@v2
-        with:
-          path: ./CHANGELOG.md
-          name: Changelog
+
       - name: "🚀 Create GitHub release"
         id: create-github-release
         uses: actions/create-release@v1
@@ -57,7 +42,6 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ steps.get-version.outputs.tag }}
-          body: ${{ steps.generate-changelog.outputs.changelog }}
           prerelease: false
       - name: "📤 Upload paper"
         uses: actions/upload-release-asset@v1
@@ -68,12 +52,3 @@ jobs:
           asset_path: paper/paper.pdf
           asset_name: paper.pdf
           asset_content_type: application/pdf
-      - name: "📤 Upload changelog"
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-github-release.outputs.upload_url }}
-          asset_path: ./CHANGELOG.md
-          asset_name: CHANGELOG.md
-          asset_content_type: application/zip
