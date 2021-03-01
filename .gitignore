@@ -330,3 +330,4 @@ TSWLatexianTemp*
 # End of https://www.toptal.com/developers/gitignore/api/julia,vscode,latex
 
 paper/paper.pdf
+talk/talk.pdf
