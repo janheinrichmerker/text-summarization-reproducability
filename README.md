@@ -10,7 +10,7 @@ _The study is conducted as part of the [Data Mining](https://www.informatik.uni-
 
 ## Usage
 
-1. Start [Pluto]:
+1. Start [Pluto](https://github.com/fonsp/Pluto.jl):
 
     ```shell script
     julia --project=. --eval="using Pluto; Pluto.run()"
