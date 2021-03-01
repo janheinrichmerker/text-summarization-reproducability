@@ -25,6 +25,7 @@ function __init__()
             Preprocessed CNN/Dailymail summary data for BERT-based summarization.
             """,
             "1DN7ClZCCXsk2KegmC6t4ClBwtAf5galI",
+            "e1921b399012b4ce7e585eabe8a73fea1e9541fc30892b21de2c503ab9a1f9a9",
             fetch_method=fetch_google_drive_id,
             post_fetch_method=unpack,
         )
