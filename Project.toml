@@ -5,7 +5,9 @@ version = "0.1.0"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 Transformers = "21ca0261-441d-5938-ace7-c90938fde4d4"
 
