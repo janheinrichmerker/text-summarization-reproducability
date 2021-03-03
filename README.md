@@ -1,5 +1,8 @@
-[![GitHub Actions](https://img.shields.io/github/workflow/status/heinrichreimer/text-summarization-reproducability/CI?style=flat-square)](https://github.com/heinrichreimer/text-summarization-reproducability/actions?query=workflow%3A"CI")
-[![Codecov](https://img.shields.io/codecov/c/github/heinrichreimer/text-summarization-reproducability?style=flat-square)](https://codecov.io/github/heinrichreimer/text-summarization-reproducability/)
+[![CI](https://img.shields.io/github/workflow/status/heinrichreimer/text-summarization-reproducability/CI?style=flat-square)](https://github.com/heinrichreimer/text-summarization-reproducability/actions?query=workflow%3A"CI")
+[![Code coverage](https://img.shields.io/codecov/c/github/heinrichreimer/text-summarization-reproducability?style=flat-square)](https://codecov.io/github/heinrichreimer/text-summarization-reproducability/)
+[![Issues](https://img.shields.io/github/issues/heinrichreimer/text-summarization-reproducability?style=flat-square)](https://github.com/heinrichreimer/text-summarization-reproducability/issues)
+[![Commit activity](https://img.shields.io/github/commit-activity/m/heinrichreimer/text-summarization-reproducability?style=flat-square)](https://github.com/heinrichreimer/text-summarization-reproducability/commits)
+[![License](https://img.shields.io/github/license/heinrichreimer/text-summarization-reproducability?style=flat-square)](LICENSE)
 
 # 📝 text-summarization-reproducability
 
