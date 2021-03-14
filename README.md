@@ -13,11 +13,43 @@ _The study is conducted as part of the [Data Mining](https://www.informatik.uni-
 
 ## Usage
 
-1. Start [Pluto](https://github.com/fonsp/Pluto.jl):
+### Local machine
+
+1. Install [Julia](https://julialang.org/downloads/) and open Julia REPL.
 
     ```shell script
-    julia --project=. --eval="using Pluto; Pluto.run()"
+    julia
     ```
+
+1. Activate project and install dependencies.
+
+    ```julia
+    ] activate
+    ```
+
+1. Start [Pluto](https://github.com/fonsp/Pluto.jl) notebook.
+
+    ```julia
+    using Pluto
+    Pluto.run(notebook="./src/notebook.jl")
+    ```
+
+### Docker container
+
+1. Install [Docker](https://docs.docker.com/get-docker/).
+1. Build a Docker container with this project.
+
+    ```shell script
+    docker build -t text-summarization-reproducability .
+    ```
+
+1. Start [Pluto](https://github.com/fonsp/Pluto.jl) notebook.
+
+    ```shell script
+    docker run -p 1234:1234 -it text-summarization-reproducability
+    ```
+
+    Note that Julia runs rather slow inside Docker.
 
 ## License
 
