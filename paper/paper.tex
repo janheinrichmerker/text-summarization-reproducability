@@ -1,4 +1,4 @@
-\documentclass[english,sigconf,nonacm,natbib=false,urlbreakonhyphens=false,screen]{acmart}
+\documentclass[english,acmlarge,nonacm,natbib=false,urlbreakonhyphens=false,screen]{acmart}
 \usepackage{babel}
 \usepackage{csquotes}
 \usepackage{listings}
@@ -17,6 +17,10 @@
     \country{Germany}
 }
 \email{jan.reimer@student.uni-halle.de}
+
+% Don't display a book title or conference.
+\acmBooktitle{}
+\acmConference{}{}{}
 
 \addbibresource{../literature/literature.bib}
 \nocite{*} % TODO Remove before publishing.
