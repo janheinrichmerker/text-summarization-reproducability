@@ -24,7 +24,9 @@ _The study is conducted as part of the [Data Mining](https://www.informatik.uni-
 1. Activate project and install dependencies.
 
     ```julia
-    ] activate
+    using Pkg
+    Pkg.activate(".")
+    Pkg.instantiate()
     ```
 
 1. Start [Pluto](https://github.com/fonsp/Pluto.jl) notebook.
