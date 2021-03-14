@@ -53,6 +53,14 @@ _The study is conducted as part of the [Data Mining](https://www.informatik.uni-
 
     Note that Julia runs rather slow inside Docker.
 
+## Code quality
+
+To keep code quality at a high level, all commits are atomar, which can be checked using the following command.
+
+```shell script
+git --no-pager log --all --graph --no-color --date=short --pretty='format:%h%d (%s, %ad)'
+```
+
 ## License
 
 This project is [MIT licensed](LICENSE), so you can use the code for whatever you want as long as you mention this repository.
