@@ -29,6 +29,13 @@ _The study is conducted as part of the [Data Mining](https://www.informatik.uni-
     Pkg.instantiate()
     ```
 
+1. Setup [PyCall.jl](https://github.com/JuliaPy/PyCall.jl) to use a Conda environment.
+
+    ```julia
+    ENV["PYTHON"] = ""
+    Pkg.build("PyCall")
+    ```
+
 1. Start [Pluto](https://github.com/fonsp/Pluto.jl) notebook.
 
     ```julia
