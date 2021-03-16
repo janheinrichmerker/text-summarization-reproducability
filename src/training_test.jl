@@ -5,79 +5,79 @@ using Flux: onecold
 using CUDA
 @info "Loading Transformers."
 using Transformers
-@info "Loading Transformers.Basic."
 using Transformers.Basic
+using Transformers.Pretrain
+
 
 # Enable GPU for Transformers.
 enable_gpu(true)
 gpu = todevice
 
-# Define vocabulary.
-labels = collect(1:10)
-start_symbol = 10 + 1
-end_symbol = 10 + 2
-unknown_symbol = 0
-labels = [unknown_symbol, start_symbol, end_symbol, labels...]
-vocabulary = Vocabulary(labels, unknown_symbol)
+
+@info "Loading pretrained BERT model."
+bert_model, wordpiece, tokenizer = pretrain"bert-uncased_L-12_H-768_A-12"
+@info "Pretrained BERT model loaded successfully."
+
+
+vocabulary = Vocabulary(wordpiece)
 
 # Function for adding start & end symbol.
-preprocess(data::Array{Int})::Array{Int} = [start_symbol, data..., end_symbol]
+function preprocess(text)
+    tokens = text |> tokenizer |> wordpiece
+    ["[CLS]"; tokens; "[SEP]"]
+end
 
 # Function for generating training data.
-function sample_data()::Tuple{Array{Int}, Array{Int}}
-    data = rand(1:10, 15)
-    return data, data
+function sample_data()
+    text = "Peter Piper picked a peck of pickled peppers"
+    return text, text
 end
 
 # Generate a training sample.
 @show preprocessed_data = preprocess.(sample_data())
 # Encode sample using vocabulary.
-@show sample = vocabulary(preprocessed_data[1])
 
+function to_bert_input(preprocessed)
+    token_indices = vocabulary(preprocessed)
+    segment_indices = fill(1, length(preprocessed))
+    (tok = token_indices, segment = segment_indices)
+end
 
-# Define word embedding layer to turn word indexes to word vectors.
-embed_word = Embed(512, length(vocabulary)) #|> gpu
-# Define position embedding layer.
-embed_position = PositionEmbedding(512) #|> gpu
+@show sample = to_bert_input(preprocessed_data[1])
+
 # Combine embedding layers.
-function embed(data::Array{Int})
-    scale = inv(sqrt(512))
-    word_embedding = embed_word(data, scale)
-    position_embedding = embed_position(word_embedding)
-    return word_embedding + position_embedding
+function embed(data)
+    bert_model.embed(data)
 end
 
 @show embed(sample)
 
-# Define two transformer encoder layers.
-encoder_layers = [
-    Transformer(512, 8, 64, 2048) #|> gpu
-    for i ∈ 1:2
-]
 
-# Define two transformer encoder layers.
+
+# Define 6 [paper] transformer encoder layers.
 decoder_layers = [
-    TransformerDecoder(512, 8, 64, 2048) #|> gpu
-    for i ∈ 1:2
+    # Each decoder has 768 hidden units (like Liu et al.), 
+    # with a hidden size for feed-forward layers of 2048 (like Liu et al.). 
+    # We set the dropout probability to 0.1 (like Liu et al.).
+    # We use 8 heads with a head size of 768/8 = 96 for the 
+    # multi-head attention (like Vaswani et al., as mentioned in Liu et. al).
+    TransformerDecoder(768, 8, 96, 2048, pdrop=0.1) #|> gpu
+    for i ∈ 1:6
 ]
 
 # Define final classification layer.
 linear = Positionwise(
-    Dense(512, length(vocabulary)),
+    Dense(768, length(vocabulary)),
     logsoftmax
 ) #|> gpu
 
 # Define encoder stack.
-function encoder(data::Array{Int})
-    embedding = embed(data)
-    for transformer ∈ encoder_layers
-        embedding = transformer(embedding)
-    end
-    return embedding
+function encoder(data)
+    data |> embed |> bert_model.transformers
 end
 
 # Define decoder stack.
-function decoder(data::Array{Int}, encoded)
+function decoder(data, encoded)
     embedding = embed(data)
     for transformer ∈ decoder_layers
         embedding = transformer(embedding, encoded)
@@ -92,17 +92,17 @@ probs = decoder(sample, encoded)
 @show length(probs)
 
 
-function translate(input::Array{Int})
-    indices = input |> preprocess |> vocabulary #|> gpu
-    sequence::Array{Int} = [start_symbol]
+function translate(input::String)
+    indices = input |> preprocess |> to_bert_input #|> gpu
+    sequence = ["[CLS]"]
     encoded = encoder(indices)
-    max_iterations = 2 * length(indices)
+    max_iterations = 2 * length(indices.tok)
     for i = 1:max_iterations
         @info "Iteration $i of $max_iterations."
-        target = sequence |> vocabulary #|> gpu
+        target = sequence |> to_bert_input #|> gpu
         decoded = decoder(target, encoded)
-        next_tokens = onecold(decoded, labels)
-        next_token = next_tokens[end]
+        next_tokens = onecold(decoded, vocabulary.list)
+        @show next_token = next_tokens[end]
         push!(sequence, next_token)
         if next_token == end_symbol
             break
