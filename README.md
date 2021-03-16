@@ -24,9 +24,8 @@ _The study is conducted as part of the [Data Mining](https://www.informatik.uni-
 
 1. Start [Pluto](https://github.com/fonsp/Pluto.jl) notebook.
 
-    ```julia
-    using Pluto
-    Pluto.run(notebook="./src/notebook.jl")
+    ```shell script
+    julia --project=./ ./src/start_notebook.jl
     ```
 
 ### Docker container

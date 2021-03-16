@@ -24,9 +24,5 @@ COPY . ./
 EXPOSE 1234
 
 # Start notebook.
-CMD julia --eval=" \
-    using Pkg; \
-    Pkg.activate(\".\"); \
-    using Pluto; \
-    Pluto.run(host=\"0.0.0.0\", notebook=\"src/notebook.jl\")" |\
-    sed "s/0.0.0.0/localhost/"
+ENV HOST=0.0.0.0
+CMD julia --project=./ ./src/start_notebook.jl | sed "s/0.0.0.0/localhost/"
