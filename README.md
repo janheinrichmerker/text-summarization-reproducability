@@ -6,10 +6,14 @@
 
 # 📝 text-summarization-reproducability
 
-Reproducability study on the ["Text Summarization with Pretrained Encoders"](https://doi.org/10.18653/v1/D19-1387) paper by Yang Liu and Mirella Lapata.
-In contrast to [the original implementation](https://github.com/nlpyang/PreSumm), we use the [Julia Language](https://julialang.org/) with [Flux.jl](https://fluxml.ai/) and [Transformers.jl](https://github.com/chengchingwen/Transformers.jl) for building the model. 
+Reproducability study on the ["Text Summarization with Pretrained Encoders"](https://doi.org/10.18653/v1/D19-1387) paper
+by Yang Liu and Mirella Lapata. In contrast to [the original implementation](https://github.com/nlpyang/PreSumm), we use
+the [Julia Language](https://julialang.org/) with [Flux.jl](https://fluxml.ai/)
+and [Transformers.jl](https://github.com/chengchingwen/Transformers.jl) for building the model.
 
-_The study is conducted as part of the [Data Mining](https://www.informatik.uni-halle.de/arbeitsgruppen/dbs/lehre/2757674_2757760/) lecture at [Martin Luther University Halle-Wittenberg](https://uni-halle.de)._
+_The study is conducted as part of
+the [Data Mining](https://www.informatik.uni-halle.de/arbeitsgruppen/dbs/lehre/2757674_2757760/) lecture
+at [Martin Luther University Halle-Wittenberg](https://uni-halle.de)._
 
 ## Usage
 
@@ -43,7 +47,7 @@ _The study is conducted as part of the [Data Mining](https://www.informatik.uni-
     docker run -p 1234:1234 -it text-summarization-reproducability
     ```
 
-    Note that Julia runs rather slow inside Docker.
+   Note that Julia runs rather slow inside Docker.
 
 ## Code quality
 
@@ -55,4 +59,5 @@ git --no-pager log --all --graph --no-color --date=short --pretty='format:%h%d (
 
 ## License
 
-This project is [MIT licensed](LICENSE), so you can use the code for whatever you want as long as you mention this repository.
+This project is [MIT licensed](LICENSE), so you can use the code for whatever you want as long as you mention this
+repository.
