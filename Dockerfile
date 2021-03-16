@@ -4,22 +4,17 @@ WORKDIR /app
 
 # Install dependencies.
 COPY Project.toml Manifest.toml ./
-RUN julia --eval " \
-    using Pkg; \
-    Pkg.activate(\".\"); \
-    Pkg.instantiate()"
+RUN julia --project=./ --eval="using Pkg; Pkg.instantiate()"
 
 # Setup PyCall to use a Conda environment.
 COPY src/setup_python.jl ./src/
 RUN julia --project=./ ./src/setup_python.jl
 
 # Pre-compile Pluto.
-RUN julia --eval " \
-    using Pkg; \
-    Pkg.activate(\".\"); \
-    using Pluto"
+RUN julia --project=./ --eval="using Pluto"
 
-COPY . ./
+# Copy remaining source files.
+COPY src/ ./src/
 
 EXPOSE 1234
 
