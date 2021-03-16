@@ -1,8 +1,6 @@
 @info "Loading Transformers."
 using Transformers
-@info "Loading Transformers.Basic."
 using Transformers.Basic
-@info "Loading Transformers.Pretrain."
 using Transformers.Pretrain
 
 @info "Loading pretrained BERT model."
@@ -23,9 +21,7 @@ text = ["[CLS]"; text1; "[SEP]"; text2; "[SEP]"]
 token_indices = vocab(text)
 segment_indices = [fill(1, length(text1) + 2); fill(2, length(text2) + 1)]
 
-sample = (tok = token_indices, segment = segment_indices)
-@info sample
+@show sample = (tok = token_indices, segment = segment_indices)
 
 @info "Embedding and applying transformers."
-feature_tensors = sample |> bert_model.embed |> bert_model.transformers
-@info length(feature_tensors)
+@show feature_tensors = sample |> bert_model.embed |> bert_model.transformers
