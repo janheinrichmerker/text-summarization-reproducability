@@ -10,10 +10,8 @@ RUN julia --eval " \
     Pkg.instantiate()"
 
 # Setup PyCall to use a Conda environment.
-RUN julia --eval " \
-    ENV[\"PYTHON\"] = \"\" \
-    using Pkg; \
-    Pkg.build(\"PyCall\")"
+COPY src/setup_python.jl ./src/
+RUN julia --project=./ ./src/setup_python.jl
 
 # Pre-compile Pluto.
 RUN julia --eval " \

@@ -15,25 +15,11 @@ _The study is conducted as part of the [Data Mining](https://www.informatik.uni-
 
 ### Local machine
 
-1. Install [Julia](https://julialang.org/downloads/) and open Julia REPL.
-
-    ```shell script
-    julia
-    ```
-
-1. Activate project and install dependencies.
-
-    ```julia
-    using Pkg
-    Pkg.activate(".")
-    Pkg.instantiate()
-    ```
-
+1. Install [Julia](https://julialang.org/downloads/).
 1. Setup [PyCall.jl](https://github.com/JuliaPy/PyCall.jl) to use a Conda environment.
 
-    ```julia
-    ENV["PYTHON"] = ""
-    Pkg.build("PyCall")
+    ```shell script
+    julia --project=./ ./src/setup_python.jl
     ```
 
 1. Start [Pluto](https://github.com/fonsp/Pluto.jl) notebook.
