@@ -6,6 +6,7 @@ using Flux: @functor, onecold
 include("encoder.jl")
 include("decoder.jl")
 include("classifier.jl")
+include("../search/beam_search.jl")
 
 struct Translator
     encoder::Union{Encoder,Bert}
@@ -17,17 +18,20 @@ end
 @functor Translator
 
 function (translator::Translator)(tokens, start_token, end_token)
-    indices = tokens |> vocabulary
-    sequence = [start_token]
-    encoded = translator.encoder(indices)
-    while last(sequence) != end_token
-        target = sequence |> vocabulary
-        decoded = translator.decoder(target, encoded) |> translator.classifier
-        next_tokens = onecold(decoded, translator.vocabulary.list)
-        # TODO Trigram blocking here?
-        @show next_token = next_tokens[end]
-        push!(sequence, next_token)
-    end
+    indices = tokens |> translator.vocabulary
+    encoded = translator.encoder(indices)    
+    sequence = beam_search(
+        5,
+        translator.vocabulary.list,
+        function (sequence::Array)
+            target = translator.vocabulary(sequence)
+            decoded = translator.decoder(target, encoded)
+            classified = translator.classifier(decoded)[:,end]
+            return classified
+        end,
+        sequence -> last(sequence) != end_token,
+        initial_sequence=[start_token]
+    )
     return sequence[2:end - 1]
 end
 
