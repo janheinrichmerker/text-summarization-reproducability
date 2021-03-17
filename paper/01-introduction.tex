@@ -19,6 +19,8 @@ Apart from the advantages of more training data, a pretrained language model als
 \citeauthor{LiuL2019} propose a sentence classification architecture for extractive and a standard encoder-deoder framework for abstractive summarization~\cite{LiuL2019}.
 In both tasks, a pretrained \textsc{Bert} transformer model is used to encode the source text. Then for extractive summarization, sentece vectors from the BERT encoder are transformed and classified whether they should be included in the summary. For abstractive summarization, \textsc{Bert} vectors are then decoded using a transformer decoder~\cite{LiuL2019}. In both cases, the \textsc{Bert} encoder is jointly fine-tuned with the classfier or decoder.
 
+% TODO: Abstractive summarization is similar to neural machine translation setting.
+
 Due to its promising trade-off between model complexity and performance on ROUGE metrics, we choose the abstractive summarization model \textsc{BertAbsSum} from~\citeauthor{LiuL2019} for our replication. The abstractive model also allows for more variation of the model's hyperparameters, e.g. changing the size or depth of the transformer decoder. 
 Even though the extractive framework outperforms previous approaches more  distinctly, it requires aditional preprocessing of its input data and the model is more complex in general, requiring a separate, more detailed replication study.
 
