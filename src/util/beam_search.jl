@@ -1,68 +1,144 @@
+struct Path{T}
+    sequence::Array{T}
+    probability::AbstractFloat
+end
+
+function expand(
+    path::Path{T},
+    predict_next::Function,
+    vocabulary::AbstractVector{T}
+)::AbstractVector{Path{T}} where T
+    # Compute probabilities for next token.
+    word_probabilities = predict_next(path.sequence)
+
+    # Combine with own probability.
+    probabilities = word_probabilities .* path.probability
+
+    @assert length(probabilities) == length(vocabulary)
+
+    # Return expanded paths.
+    return [
+        Path(
+            [path.sequence..., vocabulary[i]],
+            probabilities[i],
+        )
+        for i ∈ 1:length(vocabulary)
+    ]
+end
+
+function expand(
+    path::Path{T},
+    predict_next::Function,
+    vocabulary::AbstractVector{T},
+    expandable::Function,
+)::AbstractVector{Path{T}} where T
+    if expandable(path.sequence)
+        # Expand next token.
+        expand(path, predict_next, vocabulary)
+    else
+        # Otherwise, return as is.
+        [path]
+    end
+end
+
 # Beam search for generating sequences.
 function beam_search(
     width::Int, 
-    steps::Int, 
+    vocabulary::AbstractVector{T}, 
     # Function returning a column vector of probabilities for each word 
     # in the vocabulary, given the current sequence.
-    predict_next::Function,
-    vocabulary::AbstractVector;
-)::AbstractVector{T} where T
-    @assert size <= length(vocabulary)
-
-    struct Path{T}
-        sequence::Array{T}
-        probability::AbstractFloat
-    end
+    predict::Function,
+    # Predicate to check whether a sequence is expandable.
+    # One might for example check for an end token.
+    expandable::Function;
+    initial_sequence::AbstractVector{T}=[]
+)::AbstractVector{AbstractVector{T}} where T
+    @assert width <= length(vocabulary)
 
     # Start with one initial path, the empty sequence.
-    local paths = [Path([], 1.0)]
-    for i ∈ 1:steps
-        # Probability for each word in the vocabulary, 
-        # to appear next with each currently considered sequence.
-        probabilities_matrix::Array{<:AbstractFloat,2} = hcat(
-            predict_next(path.sequence) .* path.probability
-            for path ∈ paths
+    local paths::AbstractVector{Path{T}} = [Path(initial_sequence, 1.0)]
+
+    # Expand iteratively until no expandable path is left.
+    i = 1
+    while length(paths) > 0 && any(path -> expandable(path.sequence), paths)
+        @show i
+        i += 1
+
+        # Calculate paths (hypotheses and probabilities).
+        next_paths::AbstractVector{Path{T}} = vcat(
+            [
+                expand(path, predict, vocabulary, expandable)
+                for path ∈ paths 
+            ]...
         )
-        @assert size(probabilities_matrix, 1) == length(vocabulary)
-        @assert size(probabilities_matrix, 2) <= width
 
-        # Helper function to get a potential path's probability.
-        function probability(word_index::Int, path_index::Int)
-            probabilities_matrix[word_index, path_index]
-        end
+        # Sort paths by descending probability.
+        sort!(next_paths, by=path -> path.probability, rev=true)
 
-        # Array of pairs of row (vocabulary) and column (sequence) indices. 
-        indices = [
-            (word_index, path_index)
-            for word_index ∈ axes(probabilities_matrix, 1),
-                path_index ∈ axes(probabilities_matrix, 2)
-        ]
-
-        # Sort indices by descending probability.
-        sort!(indices, by=probability, rev=true)
-
-        # Select best indices.
-        most_likely_indices = first(indices, width)
-
-        # Build next paths.
-        paths = [
-            Path(
-                push!(paths[path_index].sequence, vocabulary[word_index]),
-                probability(word_index, path_index)
-            )
-            for (word_index, path_index) ∈ most_likely_indices
-        ]
+        # Select best paths.
+        paths = next_paths[1:min(length(next_paths), width)]
+        seq = map(path -> path.sequence, paths)
+        @show seq
     end
-
-    sort!(paths, by=path -> path.probability, rev=true)
+    
     return map(path -> path.sequence, paths)
 end
 
+# Beam search for generating sequences.
+function beam_search(
+    width::Int, 
+    vocabulary::AbstractVector{T}, 
+    # Function returning a column vector of probabilities for each word 
+    # in the vocabulary, given the current sequence.
+    predict::Function,
+    # Max steps to expand.
+    steps::Int;
+    initial_sequence::AbstractVector{T}=[]
+)::AbstractVector{AbstractVector{T}} where T
+    beam_search(
+        width,
+        vocabulary,
+        predict,
+        sequence -> length(sequence) > length(initial_sequence) + steps,
+        initial_sequence=initial_sequence
+    )
+end
+
 # Like beam search, but only the single locally best path is considered.
-greedy_search(
-    steps::Int, 
+function greedy_search(
+    vocabulary::AbstractVector{T},
     # Function returning a column vector of probabilities for each word 
     # in the vocabulary, given the current sequence and input.
-    predict_next::Function,
-    vocabulary::AbstractVector,
-) = beam_search(1, steps, predict_next, vocabulary)
+    predict::Function,
+    # Predicate to check whether a sequence is expandable.
+    # One might for example check for an end token.
+    expandable::Function;
+    initial_sequence::AbstractVector{T}=[]
+)::AbstractVector{T} where T
+    beam_search(
+        1, 
+        vocabulary, 
+        predict, 
+        expandable, 
+        initial_sequence=initial_sequence
+    )
+end
+
+# Like beam search, but only the single locally best path is considered.
+function greedy_search(
+    vocabulary::AbstractVector{T},
+    # Function returning a column vector of probabilities for each word 
+    # in the vocabulary, given the current sequence and input.
+    predict::Function,
+    # Max steps to expand.
+    steps::Int;
+    initial_sequence::AbstractVector{T}=[]
+)::AbstractVector{T} where T
+    beam_search(
+        1, 
+        vocabulary, 
+        predict, 
+        steps, 
+        initial_sequence=initial_sequence
+    )
+end
