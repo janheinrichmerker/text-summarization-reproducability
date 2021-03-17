@@ -1,11 +1,29 @@
 \section{Introduction (50/300)}
 
-What's the problem?
-Why is this an important problem?
-What's the replicated article's contribution?
-Which parts of the article were chosen for the replication?
-Give reasons for the selection.
-Why were other parts of the article not replicated?
-What new findings do we expect with the planned reproduction?
-And which parts of that are not contained in the replicated article?
-What is/are contribution/s of our article about the reproduction of the selected work?
+With the Web we have access to huge amounts of textual data, e.g., news articles.
+However, most web documents are unstructured and thus difficult to analyze.
+For instance, it is hard to follow current events in the news, if we would have to read each article entirely.
+Text summarization in general can be used to condense larger texts to its essential contents~\cite[xix]{Torres-Moreno2014}.
+Often software is used for automatic text summarization and in recent years
+automatic automatic text summarization has become an important problem in natural language processing for information retrieval~\cite[xxi\,f.]{Torres-Moreno2014}.
+The task of text summarization can be divided into two main approaces: extractive and abstractive summarization. In extractive text summarization, the task is to extract most important sentences from the source text. In abstractive text summarization new text is generated which does not necessarily have to match parts of the source text~\cite[28]{Torres-Moreno2014}.
+Particularily, automatic abstractive summaries aim to be more comparable to human summaries~\cite[220]{Torres-Moreno2014}.
+
+Previous neural approaches to abstractive summarization are based on sequence-to-sequence modelling~\cite{NallapatiZSGX2016}, pointing to the source text~\cite{SeeLM2017}, or multiple communicating agents~\cite{CelikyilmazBHC2018}.
+Though, the limited amount of training data in benchmark datasets suited for abstractive summarization makes it difficult to train deep neural networks.
+For example, the CNN dataset contains 69M tokens, the Daily Mail dataset contains 173M tokens that can be used for training an abstraction model~\cite{HermannKGEKSB2015}. 
+With the availability of pretrained language models like ELMo~\cite{PetersNIGCLZ2018} and \textsc{Bert}~\cite{DevlinCLT2019} it is often more efficient to fine-tune a model build upon a pretrained language model, that already encodes semantics of a language~\cite{LiuL2019}.
+In comparison to the CNN or DailyMail datasets, \textsc{Bert} was trained on 3300M tokens~\cite{DevlinCLT2019}.
+Apart from the advantages of more training data, a pretrained language model also reduces the learning cost, as models building upon it only have to be fine-tuned.
+
+\citeauthor{LiuL2019} propose a sentence classification architecture for extractive and a standard encoder-deoder framework for abstractive summarization~\cite{LiuL2019}.
+In both tasks, a pretrained \textsc{Bert} transformer model is used to encode the source text. Then for extractive summarization, sentece vectors from the BERT encoder are transformed and classified whether they should be included in the summary. For abstractive summarization, \textsc{Bert} vectors are then decoded using a transformer decoder~\cite{LiuL2019}. In both cases, the \textsc{Bert} encoder is jointly fine-tuned with the classfier or decoder.
+
+Due to its promising trade-off between model complexity and performance on ROUGE metrics, we choose the abstractive summarization model \textsc{BertAbsSum} from~\citeauthor{LiuL2019} for our replication. The abstractive model also allows for more variation of the model's hyperparameters, e.g. changing the size or depth of the transformer decoder. 
+Even though the extractive framework outperforms previous approaches more  distinctly, it requires aditional preprocessing of its input data and the model is more complex in general, requiring a separate, more detailed replication study.
+
+\citeauthor{LiuL2019} claim that the \textsc{BertAbsSum} model outperforms many previously state-of-the-art summarizers in informativeness and fluency, measured using \textsc{Rouge}~\cite{LiuL2019,Lin2004}.
+We expect to confirm their performance on our re-implemented model.
+We further seek to find better hyperparameters for the transformer decoder, an evaluation that is missing from the replicated paper.
+Additionally, we compare the \textsc{BertAbsSum} model to it's un-pretrained variant Transformer\textsc{Abs} from the same article.
+With our in-depth analysis on the \textsc{BertAbsSum} and Transformer\textsc{Abs} model we give insights on the advantages of pretrained encoders like \textsc{Bert} for abstractive text summarization.
