@@ -10,6 +10,9 @@ using DataDeps
 # ╔═╡ 5e093f3e-85e9-11eb-1415-437598a7e127
 using Base.Iterators: take
 
+# ╔═╡ ccbdbf7e-84d9-11eb-39b5-b9dd61cc9544
+include("data/datasets.jl");
+
 # ╔═╡ 702d3820-84d9-11eb-1895-1d00242e5363
 md"""
 # Reproducing Text Summarization with Pretrained Encoders
@@ -134,9 +137,6 @@ function ingredients(path::String) # See
              :(include($path))))
 	m
 end;
-
-# ╔═╡ ccbdbf7e-84d9-11eb-39b5-b9dd61cc9544
-datasets = ingredients("data/datasets.jl");
 
 # ╔═╡ f8ea1b8a-8536-11eb-3f98-3b8e28ac16ff
 loader = ingredients("data/loader.jl");
