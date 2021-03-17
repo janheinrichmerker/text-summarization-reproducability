@@ -1,11 +1,11 @@
 using Transformers
 using Transformers.Basic
 using Flux
-using Flux:@functor, onecold
+using Flux: @functor, onecold
 
-import("encoder.jl")
-import("decoder.jl")
-import("classifier.jl")
+include("encoder.jl")
+include("decoder.jl")
+include("classifier.jl")
 
 struct Translator
     encoder::Union{Encoder,Bert}

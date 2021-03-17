@@ -10,6 +10,13 @@ end
 @functor Encoder
 
 function (encoder::Encoder)(indices)
+    if typeof(encoder.embed) <: CompositeEmbedding
+        indices = (
+            tok = indices,
+            segment = fill(1, length(indices))
+        )
+    end
+    
     embedding = encoder.embed(indices)
     for transformer ∈ encoder.layers
         embedding = transformer(embedding)

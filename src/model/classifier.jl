@@ -4,7 +4,7 @@ using Flux
 using Flux:@functor
 
 struct Classifier
-    classifier::Positionwise{Dense,typeof(logsoftmax)}
+    classifier::Positionwise
 end
 
 @functor Classifier
