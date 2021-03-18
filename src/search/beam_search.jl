@@ -59,10 +59,10 @@ function beam_search(
     local paths::AbstractVector{Path{T}} = [Path(initial_sequence, 1.0)]
 
     # Expand iteratively until no expandable path is left.
-    i = 1
+    i = 0
     while length(paths) > 0 && any(path -> expandable(path.sequence), paths)
-        @show i
-        i += 1
+        @show i += 1
+        
 
         # Calculate paths (hypotheses and probabilities).
         next_paths::AbstractVector{Path{T}} = vcat(
@@ -77,8 +77,8 @@ function beam_search(
 
         # Select best paths.
         paths = next_paths[1:min(length(next_paths), width)]
-        seq = map(path -> path.sequence, paths)
-        @show seq
+
+        @show map(path -> path.sequence, paths)
     end
     
     return map(path -> path.sequence, paths)
