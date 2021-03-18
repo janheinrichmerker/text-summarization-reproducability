@@ -77,7 +77,7 @@ function beam_search(
     # Expand iteratively until no expandable path is left.
     i = 1
     while length(paths) > 0 && any(path -> expandable(path.sequence), paths)
-        @info "Predicting next token in iteration $i."
+        @info "Predicting next token for iteration $i."
         
         # Calculate paths (hypotheses and probabilities).
         next_paths::AbstractVector{Path{T}} = vcat(
@@ -94,7 +94,9 @@ function beam_search(
         # Select best paths.
         paths = next_paths[1:min(length(next_paths), width)]
 
-        @info "Scores in iteration $i." map(score, paths)
+
+        score_and_probability(path::Path) = (score(path), exp(path.log_probability))
+        @info "Scores and probabilities for beam iteration $i." map(score_and_probability, paths)
         i += 1
     end
 
