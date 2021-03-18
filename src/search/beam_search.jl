@@ -104,6 +104,29 @@ function beam_search(
     )
 end
 
+# Beam search for generating sequences.
+function beam_search(
+    width::Int, 
+    vocabulary::AbstractVector{T}, 
+    # Function returning a column vector of probabilities for each word 
+    # in the vocabulary, given the current sequence.
+    predict::Function,
+    # Predicate to check whether a sequence is expandable.
+    # One might for example check for an end token.
+    expandable::Function,
+    # Max steps to expand.
+    steps::Int;
+    initial_sequence::AbstractVector{T}=[]
+)::AbstractVector{AbstractVector{T}} where T
+    beam_search(
+        width,
+        vocabulary,
+        predict,
+        sequence -> expandable(sequence) && length(sequence) > length(initial_sequence) + steps,
+        initial_sequence=initial_sequence
+    )
+end
+
 # Like beam search, but only the single locally best path is considered.
 function greedy_search(
     vocabulary::AbstractVector{T},
@@ -138,6 +161,29 @@ function greedy_search(
         1, 
         vocabulary, 
         predict, 
+        steps, 
+        initial_sequence=initial_sequence
+    )
+end
+
+# Like beam search, but only the single locally best path is considered.
+function greedy_search(
+    vocabulary::AbstractVector{T},
+    # Function returning a column vector of probabilities for each word 
+    # in the vocabulary, given the current sequence and input.
+    predict::Function,
+    # Predicate to check whether a sequence is expandable.
+    # One might for example check for an end token.
+    expandable::Function;
+    # Max steps to expand.
+    steps::Int;
+    initial_sequence::AbstractVector{T}=[]
+)::AbstractVector{T} where T
+    beam_search(
+        1, 
+        vocabulary, 
+        predict,
+        expandable, 
         steps, 
         initial_sequence=initial_sequence
     )
