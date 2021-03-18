@@ -1,6 +1,5 @@
 @info "Loading Flux."
 using Flux
-using Flux:onecold,gpu
 @info "Loading CUDA."
 using CUDA
 @info "Loading Transformers."
