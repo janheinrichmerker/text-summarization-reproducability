@@ -17,12 +17,11 @@ vocabulary = Vocabulary(wordpiece)
 @info "Pretrained BERT model loaded successfully."
 
 sample_text = "Peter Piper picked a peck of pickled peppers"
-sample = sample_text |> tokenizer |> wordpiece |> t -> ["[CLS]", t..., "[SEP]"]
+@show sample = sample_text |> tokenizer |> wordpiece |> t -> ["[CLS]", t..., "[SEP]"]
 
-# include("src/model/abstractive.jl")
-include("model/abstractive.jl")
+include("abstractive.jl")
 
-model = BertAbs(
+@show model = BertAbs(
     bert_model,
     length(vocabulary),
     # This parameter is not described in the paper.
@@ -32,4 +31,6 @@ model = BertAbs(
     length_normalization=0.8,
 )
 
-translated = model(sample, vocabulary)
+# The translated output sequence is nonsense, 
+# because the decoder has not been trained yet.
+@show translated = model(sample, vocabulary)
