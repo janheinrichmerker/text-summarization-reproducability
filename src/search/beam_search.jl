@@ -52,9 +52,9 @@ function has_redundant_trigrams(sequence::AbstractVector)::Bool
         return false
     end
     trigram = sequence[end-2:end]
-    for i ∈ 1:length(sequence)-2
+    for i ∈ 1:length(sequence)-3
         if sequence[i:i+2] == trigram
-            @warn "Sequence $sequence has redundant trigram $trigram at position $i."
+            @info "Sequence $sequence has redundant trigram $trigram at position $i."
             return true
         end
     end
@@ -104,7 +104,7 @@ function beam_search(
     # Expand iteratively until no expandable path is left.
     i = 1
     while length(paths) > 0 && any(path -> expandable(path.sequence), paths)
-        @info "Predicting next token for iteration $i."
+        @debug "Predicting next token for iteration $i."
         
         # Calculate paths (hypotheses and probabilities).
         next_paths::AbstractVector{Path{T}} = vcat(
@@ -126,18 +126,18 @@ function beam_search(
         # Select best paths.
         paths = next_paths[1:min(length(next_paths), width)]
 
+        local_best_path::Path{T} = first(paths)
+        @info "Found best sequence for iteration $i with probability $(exp(local_best_path.log_probability)) (score $(score(local_best_path)))."
+
         append!(out_paths, paths)
 
-        score_and_probability(path::Path) = (score(path), exp(path.log_probability))
-        @info "Scores and probabilities for beam iteration $i." map(score_and_probability, paths)
         i += 1
     end
 
     # Sort paths by descending score.
     sort!(out_paths, by=score, rev=true)
-    @show out_paths
     
-    best_path::Path{T} = out_paths[1]
+    best_path::Path{T} = first(out_paths)
     @info "Found best sequence with probability $(exp(best_path.log_probability)) (score $(score(best_path)))."
     return best_path.sequence
 end
