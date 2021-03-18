@@ -11,12 +11,15 @@ include("translator.jl")
 function TransformerAbs(
     embed::AbstractEmbed,
     vocab_size::Int,
-    max_length::Int,
+    max_length::Int;
+    length_normalization::Number=0.0,
 )::Translator
     return Translator(
         embed, vocab_size,
         5, max_length,
-        768, 8, 96, 2048, 6, pdrop=0.1
+        768, 8, 96, 2048, 6, 
+        pdrop=0.1, 
+        length_normalization=length_normalization,
     )
 end
 
@@ -24,13 +27,17 @@ end
 function BertAbs(
     bert_model::TransformerModel{<:AbstractEmbed,<:Bert,<:Any},
     vocab_size::Int,
-    max_length::Int,
+    max_length::Int;
+    length_normalization::Number=0.0,
 )::Translator
     return Translator(
         bert_model.embed,
         bert_model.transformers,
         Decoder(768, 8, 96, 2048, 6, pdrop=0.1),
         Classifier(vocab_size, 768),
-        BeamSearch(5, max_length)
+        BeamSearch(
+            5, max_length, 
+            length_normalization=length_normalization
+        )
     )
 end

@@ -6,6 +6,7 @@ include("../search/beam_search.jl")
 struct BeamSearch
     width::Int
     steps::Int
+    length_normalization::Number
 end
 
 @functor BeamSearch
@@ -16,14 +17,21 @@ function (search::BeamSearch)(
     start_token::T="[CLS]",
     end_token::T="[SEP]"
 )::AbstractVector{T} where T
-    search = beam_search(
+    return beam_search(
         search.width,
         vocabulary.list,
         predict,
         sequence -> last(sequence) != end_token,
         search.steps,
-        initial_sequence=[start_token]
+        initial_sequence=[start_token],
+        length_normalization=search.length_normalization
     )
-    @show search
-    return search[1]
+end
+
+function BeamSearch(
+    width::Int,
+    steps::Int;
+    length_normalization::Number=0.0,
+)
+    return BeamSearch(width, steps, length_normalization)
 end

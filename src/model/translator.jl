@@ -38,7 +38,8 @@ function (translator::Translator)(
     function predict(sequence::AbstractVector{T})
         target = prepare(sequence)
         decoded = translator.decoder(target, encoded)
-        return translator.classifier(decoded)[:,end]
+        log_probabilities = translator.classifier(decoded)[:,end]
+        return log_probabilities
     end
 
     sequence = translator.beam_search(
@@ -50,13 +51,13 @@ function (translator::Translator)(
     return sequence
 end
 
-function Translator(embed::AbstractEmbed, vocab_size::Int, beam_width::Int, max_length::Int, size::Int, head::Int, hs::Int, ps::Int, layer::Int; act=relu,pdrop=0.1)
+function Translator(embed::AbstractEmbed, vocab_size::Int, beam_width::Int, max_length::Int, size::Int, head::Int, hs::Int, ps::Int, layer::Int; act=relu,pdrop=0.1, length_normalization::Number=0.0)
     return Translator(
         embed,
         Encoder(size, head, hs, ps, layer; act=act,pdrop=pdrop),
         Decoder(size, head, hs, ps, layer; act=act,pdrop=pdrop),
         Classifier(length(vocabulary), size),
-        BeamSearch(beam_width, max_length)
+        BeamSearch(beam_width, max_length, length_normalization)
     )
 end
 
