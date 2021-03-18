@@ -19,13 +19,13 @@ end
 @functor Translator
 
 function (translator::Translator)(
-    tokens::AbstractVector{T};
-    vocabulary::Vocabulary{T},
+    tokens::AbstractVector{T},
+    vocabulary::Vocabulary{T};
     start_token::T="[CLS]",
     end_token::T="[SEP]"
 )::AbstractVector{T} where T
     function prepare(tokens::AbstractVector{T})
-        indices = translator.vocabulary(tokens)
+        indices = vocabulary(tokens)
         if typeof(translator.embed) <: CompositeEmbedding
             indices = (tok = indices, segment = fill(1, length(indices)))
         end
@@ -42,10 +42,10 @@ function (translator::Translator)(
     end
 
     sequence = translator.beam_search(
-        translator.vocabulary.list,
+        vocabulary,
         predict,
-        start_token,
-        end_token,
+        start_token=start_token,
+        end_token=end_token,
     )
     return sequence
 end
