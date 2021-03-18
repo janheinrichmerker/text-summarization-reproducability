@@ -16,19 +16,14 @@ function (search::BeamSearch)(
     start_token::T="[CLS]",
     end_token::T="[SEP]"
 )::AbstractVector{T} where T
-    return beam_search(
+    search = beam_search(
         search.width,
         vocabulary.list,
         predict,
         sequence -> last(sequence) != end_token,
         search.steps,
         initial_sequence=[start_token]
-    )[1]
-end
-
-function BeamSearch(
-    width::Int,
-    steps::Int
-)
-    return BeamSearch(width, steps)
+    )
+    @show search
+    return search[1]
 end
