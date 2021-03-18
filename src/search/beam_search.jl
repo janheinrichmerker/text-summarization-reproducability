@@ -99,7 +99,7 @@ function beam_search(
         width,
         vocabulary,
         predict,
-        sequence -> length(sequence) > length(initial_sequence) + steps,
+        sequence -> length(sequence) <= length(initial_sequence) + steps,
         initial_sequence=initial_sequence
     )
 end
@@ -122,7 +122,7 @@ function beam_search(
         width,
         vocabulary,
         predict,
-        sequence -> expandable(sequence) && length(sequence) > length(initial_sequence) + steps,
+        sequence -> expandable(sequence) && (length(sequence) <= length(initial_sequence) + steps),
         initial_sequence=initial_sequence
     )
 end
