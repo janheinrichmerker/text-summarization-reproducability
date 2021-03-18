@@ -5,14 +5,14 @@ using Flux: @functor, onecold
 
 include("encoder.jl")
 include("decoder.jl")
-include("classifier.jl")
+include("generator.jl")
 include("beam_search.jl")
 
 struct Translator
     embed::AbstractEmbed
     encoder::Union{Encoder,Bert}
     decoder::Decoder
-    classifier::Classifier
+    generator::Generator
     beam_search::BeamSearch
 end
 
@@ -38,7 +38,7 @@ function (translator::Translator)(
     function predict(sequence::AbstractVector{T})
         target = prepare(sequence)
         decoded = translator.decoder(target, encoded)
-        log_probabilities = translator.classifier(decoded)[:,end]
+        log_probabilities = translator.generator(decoded)[:,end]
         return log_probabilities
     end
 
@@ -56,7 +56,7 @@ function Translator(embed::AbstractEmbed, vocab_size::Int, beam_width::Int, max_
         embed,
         Encoder(size, head, hs, ps, layer; act=act,pdrop=pdrop),
         Decoder(size, head, hs, ps, layer; act=act,pdrop=pdrop),
-        Classifier(length(vocabulary), size),
+        Generator(length(vocabulary), size),
         BeamSearch(beam_width, max_length, length_normalization)
     )
 end

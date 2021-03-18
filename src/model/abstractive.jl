@@ -4,7 +4,7 @@ using Flux
 using Flux:@functor, onecold
 
 include("decoder.jl")
-include("classifier.jl")
+include("generator.jl")
 include("translator.jl")
 
 # TransformerAbs model from the "Text Summarization with Pretrained Encoders" paper by Liu et al. (2019) as described on pages 6-7.
@@ -34,7 +34,7 @@ function BertAbs(
         bert_model.embed,
         bert_model.transformers,
         Decoder(768, 8, 96, 2048, 6, pdrop=0.1),
-        Classifier(vocab_size, 768),
+        Generator(vocab_size, 768),
         BeamSearch(
             5, max_length, 
             length_normalization=length_normalization
