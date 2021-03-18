@@ -1,6 +1,6 @@
 @info "Loading Flux."
 using Flux
-using Flux: onecold
+using Flux:onecold
 @info "Loading CUDA."
 using CUDA
 @info "Loading Transformers."
@@ -19,28 +19,17 @@ bert_model, wordpiece, tokenizer = pretrain"bert-uncased_L-12_H-768_A-12"
 vocabulary = Vocabulary(wordpiece)
 @info "Pretrained BERT model loaded successfully."
 
-sample = "Peter Piper picked a peck of pickled peppers" |> tokenizer |> wordpiece |> tokens -> ["[CLS]"; tokens; "[SEP]"]
-sample_indices = sample |> vocabulary
-
-
-# # Combine embedding layers.
-# function embed(token_indices)
-#     segment_indices = fill(1, length(token_indices))
-#     (tok = token_indices, segment = segment_indices)
-#     bert_model.embed(data)
-# end
-
-tokens = (tok = sample_indices, segment = fill(1, length(sample_indices)))
-embeddings = bert_model.embed(tokens)
+sample_text = "Peter Piper picked a peck of pickled peppers"
+sample = sample_text |> tokenizer |> wordpiece |> t -> ["[CLS]", t..., "[SEP]"]
 
 # include("src/model/abstractive.jl")
 include("model/abstractive.jl")
 
-model = BertAbs(bert_model, vocabulary) #|> gpu
-
-encoded = model.encoder(embeddings)
-decoded = model.decoder(sample_indices, encoded)
-next_tokens = onecold(decoded, model.vocabulary.list)
+model::Translator = BertAbs(
+    bert_model,
+    length(vocabulary),
+    5 # TODO this parameter doesn't appear in the paper.
+) # |> gpu
 
 sample
-translated = model(sample)
+translated = model(sample, vocabulary)
