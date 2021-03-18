@@ -47,6 +47,30 @@ function expand(
     end
 end
 
+function has_redundant_trigrams(sequence::AbstractVector)::Bool
+    if length(sequence) <= 3
+        return false
+    end
+    trigram = sequence[end-2:end]
+    for i ∈ 1:length(sequence)-2
+        if sequence[i:i+2] == trigram
+            @warn "Sequence $sequence has redundant trigram $trigram at position $i."
+            return true
+        end
+    end
+    return false
+end
+
+has_redundant_trigrams(path::Path)::Bool = has_redundant_trigrams(path.sequence)
+
+has_no_redundant_trigrams(path::Path)::Bool = !has_redundant_trigrams(path.sequence)
+
+function block_redundant_trigrams!(
+    paths::AbstractVector{Path{T}}
+)::AbstractVector{Path{T}} where T
+    return filter!(has_no_redundant_trigrams, paths)
+end
+
 # Beam search for generating sequences.
 function beam_search(
     width::Int, 
@@ -71,8 +95,11 @@ function beam_search(
         return path.log_probability / length_penalty
     end
 
+    # Paths to be considered as start for a single iteration.
     # Start with one initial path, the empty sequence.
     paths::AbstractVector{Path{T}} = [Path(initial_sequence, 1.0)]
+    # Paths combined of all iterations.
+    out_paths::AbstractVector{Path{T}} = []
 
     # Expand iteratively until no expandable path is left.
     i = 1
@@ -88,19 +115,31 @@ function beam_search(
         )
         @assert all(x -> is_log_probability(x.log_probability), next_paths)
 
+        # Block redundant trigrams to avoid repetition.
+        # TODO Make configurable.
+        # TODO Paulus et al. (2017, p.4) apply this only on the test set.
+        block_redundant_trigrams!(next_paths)
+
         # Sort paths by descending score.
         sort!(next_paths, by=score, rev=true)
 
         # Select best paths.
         paths = next_paths[1:min(length(next_paths), width)]
 
+        append!(out_paths, paths)
 
         score_and_probability(path::Path) = (score(path), exp(path.log_probability))
         @info "Scores and probabilities for beam iteration $i." map(score_and_probability, paths)
         i += 1
     end
 
-    return paths[1].sequence
+    # Sort paths by descending score.
+    sort!(out_paths, by=score, rev=true)
+    @show out_paths
+    
+    best_path::Path{T} = out_paths[1]
+    @info "Found best sequence with probability $(exp(best_path.log_probability)) (score $(score(best_path)))."
+    return best_path.sequence
 end
 
 # Beam search for generating sequences.
