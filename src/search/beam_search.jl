@@ -174,7 +174,7 @@ function greedy_search(
     predict::Function,
     # Predicate to check whether a sequence is expandable.
     # One might for example check for an end token.
-    expandable::Function;
+    expandable::Function,
     # Max steps to expand.
     steps::Int;
     initial_sequence::AbstractVector{T}=[]
