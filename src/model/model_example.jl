@@ -1,6 +1,6 @@
 @info "Loading Flux."
 using Flux
-using Flux:onehot
+using Flux:onehotbatch
 @info "Loading CUDA."
 using CUDA
 @info "Loading Transformers."
@@ -17,19 +17,20 @@ vocabulary = Vocabulary(wordpiece)
 @info "Pretrained BERT model loaded successfully."
 
 preprocess(text::String) = ["[CLS]"; wordpiece(tokenizer(text)); "[SEP]"]
-sample = "Peter Piper picked a peck of pickled peppers" |> preprocess
-@show sample
-target = "Peter picked pickled peppers" |> preprocess
-@show target
+inputs = "Peter Piper picked a peck of pickled peppers." |> preprocess
+@show inputs
+outputs = "Peter picked pickled peppers." |> preprocess
+@show outputs
 
 include("abstractive.jl")
 model = BertAbs(bert_model, length(vocabulary))
 @show model
 
-# Predict 4th token in target (given the first 3 tokens)
-prediction = model.transformers(vocabulary, sample, target[1:3])
+# Predict new word probabilities for target.
+prediction = model.transformers(vocabulary, inputs, outputs)
 @show size(prediction)
-ground_truth = onehot(target[4], vocabulary.list)
+# Use original one-hot word probabilities from target for comparison.
+ground_truth = onehotbatch(target, vocabulary.list)
 @show size(ground_truth)
 
 include("loss.jl")
