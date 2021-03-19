@@ -131,7 +131,7 @@ function beam_search(
         i += 1
     end
 
-    @info "Found best sequence with probability $(exp(best_path.log_probability)) (score $(score(best_path)))."
+    @info "Found best sequence with probability $(exp(best_path.log_probability)) (score $(best_path.score))."
     return best_path.sequence
 end
 
@@ -151,7 +151,7 @@ function beam_search(
         width,
         vocabulary,
         predict,
-        sequence -> length(sequence) <= length(initial_sequence) + steps,
+        sequence -> length(sequence) < length(initial_sequence) + steps,
         initial_sequence=initial_sequence,
         length_normalization=length_normalization,
     )
@@ -176,7 +176,7 @@ function beam_search(
         width,
         vocabulary,
         predict,
-        sequence -> expandable(sequence) && (length(sequence) <= length(initial_sequence) + steps),
+        sequence -> expandable(sequence) && (length(sequence) < length(initial_sequence) + steps),
         initial_sequence=initial_sequence,
         length_normalization=length_normalization,
     )
