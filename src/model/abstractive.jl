@@ -52,13 +52,9 @@ function AbsSearch()
     return BeamSearch(
         5,
         # This parameter is not described in the paper.
-        # Though, as input documents for CNN, DailyMail, 
-        # and XSum were truncated at 512 tokens it seems
-        # reasonable to truncate predictions after 
-        # the same length.
-        512,
-        # The length normalization parameter α is tuned 
-        # on the development set from 0.6 to 1.0.
+        32,
+        # The length normalization parameter α should be 
+        # tuned on the development set from 0.6 to 1.0.
         length_normalization=0.8
     )
 end
