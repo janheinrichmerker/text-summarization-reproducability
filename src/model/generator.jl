@@ -3,16 +3,16 @@ using Flux
 using Flux:@functor
 
 struct Generator
-    generator::Positionwise
+    chain::Positionwise
 end
 
 @functor Generator
 
 function (generator::Generator)(embedding)
-    return generator.generator(embedding)
+    return generator.chain(embedding)[:,end]
 end
 
-function Generator(vocab_size::Int, size::Int)
+function Generator(size::Int, vocab_size::Int)
     return Generator(
         Positionwise(
             Dense(size, vocab_size),
