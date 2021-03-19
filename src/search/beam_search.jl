@@ -15,13 +15,10 @@ function expand(
 )::AbstractVector{Path{T}} where T
     # Compute probabilities for next token.
     log_word_probabilities = predict(path.sequence)
-    # @assert all(is_log_probability, log_word_probabilities)
-    # @assert length(log_word_probabilities) == length(vocabulary)
 
     # Combine with own log probability.
     # Addition because log(p1 * p2) = log(p1) + log(p2).
     log_probabilities = log_word_probabilities .+ path.log_probability
-    # @assert all(is_log_probability, log_probabilities)
 
     # Compute length penalty for normalization.
     α = length_normalization
@@ -64,7 +61,7 @@ function has_redundant_trigrams(sequence::AbstractVector)::Bool
     trigram = sequence[end - 2:end]
     for i ∈ 1:length(sequence) - 3
         if sequence[i:i + 2] == trigram
-            @info "Sequence $sequence has redundant trigram $trigram at position $i."
+            @debug "Sequence $sequence has redundant trigram $trigram at position $i."
             return true
         end
     end
@@ -94,8 +91,6 @@ function beam_search(
     initial_sequence::AbstractVector{T}=[],
     length_normalization::Number=0.0,
 )::AbstractVector{T} where T
-    # @assert width <= length(vocabulary)
-
     # Best current path.
     best_path::Path{T} = Path(initial_sequence, 1.0, -Inf)
     # Paths to be considered as start for a single iteration.
@@ -114,7 +109,6 @@ function beam_search(
                 for path ∈ paths 
             ]...
         )
-        # @assert all(x -> is_log_probability(x.log_probability), next_paths)
 
         # Block redundant trigrams to avoid repetition.
         # TODO Make configurable.
