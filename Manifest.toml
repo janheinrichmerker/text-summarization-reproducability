@@ -337,6 +337,12 @@ git-tree-sha1 = "a662366a5d485dee882077e8da3e1a95a86d097f"
 uuid = "929cbde3-209d-540e-8aea-75f648917ca0"
 version = "2.0.0"
 
+[[Languages]]
+deps = ["InteractiveUtils", "JSON"]
+git-tree-sha1 = "b1a564061268ccc3f3397ac0982983a657d4dcb8"
+uuid = "8ef0a80b-9436-5d2c-a485-80b904378c43"
+version = "0.4.3"
+
 [[LibGit2]]
 deps = ["Printf"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
@@ -508,12 +514,6 @@ git-tree-sha1 = "4036a3bd08ac7e968e27c203d45f5fff15020621"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.1.3"
 
-[[ResumableFunctions]]
-deps = ["MacroTools"]
-git-tree-sha1 = "607f463e9d4f747ccc14dc670cfe88a242948c86"
-uuid = "c5292f4c-5179-55e1-98c5-05642aab7184"
-version = "0.6.0"
-
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
@@ -529,6 +529,18 @@ uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 [[SharedArrays]]
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
 uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+
+[[Snowball]]
+deps = ["Languages", "Snowball_jll", "WordTokenizers"]
+git-tree-sha1 = "d38c1ff8a2fca7b1c65a51457dabebef28052399"
+uuid = "fb8f903a-0164-4e73-9ffe-431110250c3b"
+version = "0.1.0"
+
+[[Snowball_jll]]
+deps = ["Libdl", "Pkg"]
+git-tree-sha1 = "35031519df40fbf0d4a6d2faae4f00e117b0ad11"
+uuid = "88f46535-a3c0-54f4-998e-4320a1339f51"
+version = "2.0.0+0"
 
 [[Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
@@ -598,6 +610,12 @@ version = "1.4.0"
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[[TextAnalysis]]
+deps = ["DataStructures", "DelimitedFiles", "JSON", "Languages", "LinearAlgebra", "Printf", "Random", "Serialization", "Snowball", "SparseArrays", "Statistics", "StatsBase", "Tables", "WordTokenizers"]
+git-tree-sha1 = "78ff8024691bbe5c0f97b6edbdcbd3662461b599"
+uuid = "a2db99b7-8b79-58f8-94bf-bbc811eef33d"
+version = "0.7.2"
 
 [[TimerOutputs]]
 deps = ["Printf"]
