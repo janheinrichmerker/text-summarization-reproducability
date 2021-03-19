@@ -1,6 +1,7 @@
 struct Path{T}
     sequence::Array{T}
     log_probability::AbstractFloat
+    score::AbstractFloat
 end
 
 is_probability(x) = x >= 0 && x <= 1
@@ -9,24 +10,32 @@ is_log_probability(x) = is_probability(exp(x))
 function expand(
     path::Path{T},
     predict::Function,
-    vocabulary::AbstractVector{T}
+    vocabulary::AbstractVector{T},
+    length_normalization::Number
 )::AbstractVector{Path{T}} where T
     # Compute probabilities for next token.
     log_word_probabilities = predict(path.sequence)
-    @assert all(is_log_probability, log_word_probabilities)
-    @assert length(log_word_probabilities) == length(vocabulary)
+    # @assert all(is_log_probability, log_word_probabilities)
+    # @assert length(log_word_probabilities) == length(vocabulary)
 
     # Combine with own log probability.
     # Addition because log(p1 * p2) = log(p1) + log(p2).
     log_probabilities = log_word_probabilities .+ path.log_probability
-    @assert all(is_log_probability, log_probabilities)
+    # @assert all(is_log_probability, log_probabilities)
 
+    # Compute length penalty for normalization.
+    α = length_normalization
+    length_penalty = ((5 + (length(path.sequence) + 1))^α) / ((5 + 1)^α)
+
+    # Compute scores.
+    scores = log_probabilities ./ length_penalty
 
     # Return expanded paths.
     return [
         Path(
             [path.sequence..., vocabulary[i]],
             log_probabilities[i],
+            scores[i],
         )
         for i ∈ 1:length(vocabulary)
     ]
@@ -36,11 +45,12 @@ function expand(
     path::Path{T},
     predict::Function,
     vocabulary::AbstractVector{T},
-    expandable::Function
+    expandable::Function,
+    length_normalization::Number
 )::AbstractVector{Path{T}} where T
     if expandable(path.sequence)
         # Expand next token.
-        expand(path, predict, vocabulary)
+        expand(path, predict, vocabulary, length_normalization)
     else
         # Otherwise, return as is.
         [path]
@@ -51,9 +61,9 @@ function has_redundant_trigrams(sequence::AbstractVector)::Bool
     if length(sequence) <= 3
         return false
     end
-    trigram = sequence[end-2:end]
-    for i ∈ 1:length(sequence)-3
-        if sequence[i:i+2] == trigram
+    trigram = sequence[end - 2:end]
+    for i ∈ 1:length(sequence) - 3
+        if sequence[i:i + 2] == trigram
             @info "Sequence $sequence has redundant trigram $trigram at position $i."
             return true
         end
@@ -84,22 +94,13 @@ function beam_search(
     initial_sequence::AbstractVector{T}=[],
     length_normalization::Number=0.0,
 )::AbstractVector{T} where T
-    @assert width <= length(vocabulary)
+    # @assert width <= length(vocabulary)
 
-    # Score used for selecting best paths in each iteration.
-    function score(path::Path{T})
-        # Compute length penalty for normalization.
-        α = length_normalization
-        length_penalty = ((5 + length(path.sequence))^α) / ((5 + 1)^α)
-
-        return path.log_probability / length_penalty
-    end
-
+    # Best current path.
+    best_path::Path{T} = Path(initial_sequence, 1.0, -Inf)
     # Paths to be considered as start for a single iteration.
     # Start with one initial path, the empty sequence.
-    paths::AbstractVector{Path{T}} = [Path(initial_sequence, 1.0)]
-    # Paths combined of all iterations.
-    out_paths::AbstractVector{Path{T}} = []
+    paths::AbstractVector{Path{T}} = [best_path]
 
     # Expand iteratively until no expandable path is left.
     i = 1
@@ -109,11 +110,11 @@ function beam_search(
         # Calculate paths (hypotheses and probabilities).
         next_paths::AbstractVector{Path{T}} = vcat(
             [
-                expand(path, predict, vocabulary, expandable)
+                expand(path, predict, vocabulary, expandable, length_normalization)
                 for path ∈ paths 
             ]...
         )
-        @assert all(x -> is_log_probability(x.log_probability), next_paths)
+        # @assert all(x -> is_log_probability(x.log_probability), next_paths)
 
         # Block redundant trigrams to avoid repetition.
         # TODO Make configurable.
@@ -121,23 +122,21 @@ function beam_search(
         block_redundant_trigrams!(next_paths)
 
         # Sort paths by descending score.
-        sort!(next_paths, by=score, rev=true)
+        sort!(next_paths, by=path -> path.score, rev=true)
 
         # Select best paths.
         paths = next_paths[1:min(length(next_paths), width)]
 
         local_best_path::Path{T} = first(paths)
-        @info "Found best sequence for iteration $i with probability $(exp(local_best_path.log_probability)) (score $(score(local_best_path)))."
+        @info "Found best sequence for iteration $i with probability $(exp(local_best_path.log_probability)) (score $(local_best_path.score))."
 
-        append!(out_paths, paths)
+        if local_best_path.score > best_path.score
+            best_path = local_best_path
+        end
 
         i += 1
     end
 
-    # Sort paths by descending score.
-    sort!(out_paths, by=score, rev=true)
-    
-    best_path::Path{T} = first(out_paths)
     @info "Found best sequence with probability $(exp(best_path.log_probability)) (score $(score(best_path)))."
     return best_path.sequence
 end
