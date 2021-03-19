@@ -33,7 +33,7 @@ function (transformers::TransformersModel)(
     vocabulary::Vocabulary{T},
     inputs::AbstractVector{T},
     outputs::AbstractVector{T}
-)::AbstractVector{AbstractFloat} where T
+)::AbstractMatrix{AbstractFloat} where T
     # Encode inputs.
     input_embedding = _embed(transformers, vocabulary, inputs)
     encoded_embedding = transformers.encoder(input_embedding)

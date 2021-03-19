@@ -8,8 +8,8 @@ end
 
 @functor Generator
 
-function (generator::Generator)(embedding)
-    return generator.chain(embedding)[:,end]
+function (generator::Generator)(embedding)::AbstractMatrix{Number}
+    return generator.chain(embedding)
 end
 
 function Generator(size::Int, vocab_size::Int)
