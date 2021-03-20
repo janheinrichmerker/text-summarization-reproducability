@@ -8,11 +8,11 @@ end
 @functor Decoder
 
 function (decoder::Decoder)(target_embedding, encoded_embedding)
-    embedding = target_embedding
-    for transformer ∈ decoder.layers
-        embedding = transformer(embedding, encoded_embedding)
-    end
-    return embedding
+    return foldl(
+        (embedding, transformer) -> transformer(embedding, encoded_embedding),
+        decoder.layers,
+        init=target_embedding
+    )
 end
 
 function Decoder(

@@ -45,7 +45,7 @@ vocabulary = Vocabulary(wordpiece)
 
 @info "Create summarization model from BERT model."
 include("model/abstractive.jl")
-model = BertAbs(bert_model, length(vocabulary))
+model = BertAbs(bert_model, length(vocabulary)) |> gpu
 @show model
 
 
@@ -86,8 +86,8 @@ reset!(model)
 max_epochs = 200_000
 for (epoch, summary) ∈ zip(1:200_000, cnndm_train)
     @info "Training epoch $epoch/$max_epochs."
-    inputs = summary.source |> preprocess
-    outputs = summary.target |> preprocess
+    inputs = summary.source |> preprocess |> gpu
+    outputs = summary.target |> preprocess |> gpu
 
     @info "Take gradients."
     @time begin

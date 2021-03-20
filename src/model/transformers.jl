@@ -23,9 +23,9 @@ function _embed(
     sequence::AbstractVector{T}
 ) where T
     indices = vocabulary(sequence)
-    if typeof(transformers.embed) <: CompositeEmbedding
-        indices = (tok = indices, segment = fill(1, length(indices)))
-    end
+    # if typeof(transformers.embed) <: CompositeEmbedding
+    #     indices = (tok = indices, segment = fill(1, length(indices)))
+    # end
     return transformers.embed(indices)
 end
 
@@ -43,8 +43,7 @@ function (transformers::TransformersModel)(
     decoded_embedding = transformers.decoder(output_embedding, encoded_embedding)
 
     # Calculate probabilities for next token.
-    log_probabilities = transformers.generator(decoded_embedding)
-    return log_probabilities
+    return transformers.generator(decoded_embedding)
 end
 
 function TransformersModel(

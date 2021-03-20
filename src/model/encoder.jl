@@ -8,10 +8,11 @@ end
 @functor Encoder
 
 function (encoder::Encoder)(embedding)
-    for transformer ∈ encoder.layers
-        embedding = transformer(embedding)
-    end
-    return embedding
+    return foldl(
+        (embedding, transformer) -> transformer(embedding),
+        encoder.layers,
+        init=embedding
+    )
 end
 
 function Encoder(
