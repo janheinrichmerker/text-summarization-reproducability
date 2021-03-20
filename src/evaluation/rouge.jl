@@ -30,7 +30,7 @@ function evaluate(
     return evaluation(translated)
 end
 
-function mean_rouge_n(samples::Channel{Sample}, n::Int)
+function mean_rouge_n(samples::Channel{Sample}, n::Integer)
     return mean(
         rouge_n([sample.reference], sample.candidate, n)
         for sample ∈ samples
@@ -42,7 +42,7 @@ function mean_rouge_n(
     model::Translator,
     wordpiece::WordPiece,
     tokenizer::Function,
-    n::Int
+    n::Integer
 )
     return evaluate(
         samples,
@@ -53,7 +53,7 @@ function mean_rouge_n(
     )
 end
 
-function mean_rouge_l(samples::Channel{Sample}, β::Number)
+function mean_rouge_l(samples::Channel{Sample}, β::AbstractFloat)
     return mean(
         rouge_l_summary([sample.reference], sample.candidate, β)
         for sample ∈ samples
@@ -65,7 +65,7 @@ function mean_rouge_l(
     model::Translator,
     wordpiece::WordPiece,
     tokenizer::Function,
-    β::Number
+    β::AbstractFloat
 )
     return evaluate(
         samples,

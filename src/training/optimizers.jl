@@ -2,8 +2,8 @@ using Flux
 using ParameterSchedulers
 
 struct Warmup
-    learning_rate::Float64
-    warmup::Float64
+    learning_rate::AbstractFloat
+    warmup::AbstractFloat
 end
 
 function (schedule::Warmup)(t)

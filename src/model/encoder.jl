@@ -15,11 +15,11 @@ function (encoder::Encoder)(embedding)
 end
 
 function Encoder(
-    size::Int, 
-    head::Int, 
-    hs::Int, 
-    ps::Int, 
-    layer::Int; 
+    size::Integer, 
+    head::Integer, 
+    hs::Integer, 
+    ps::Integer, 
+    layer::Integer; 
     act=relu, 
     pdrop=0.1
 )::Encoder

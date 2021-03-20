@@ -3,9 +3,9 @@ using Flux.Losses:kldivergence
 using Statistics:mean
 
 function translation_loss(
-    ŷ_probs::AbstractArray{Number,2},
-    y::AbstractVector{Int};
-    label_smoothing_α::Number=0.0,
+    ŷ_probs::AbstractMatrix{<:AbstractFloat},
+    y::AbstractVector{<:Integer};
+    label_smoothing_α::AbstractFloat=0.0,
     agg::Function=sum)
     
     if label_smoothing_α > 0
@@ -19,9 +19,9 @@ function translation_loss(
 end
 
 function label_smoothing_loss(
-    ŷ_probs::AbstractArray{Number,2},
-    y::AbstractVector{Int},
-    α::Number;
+    ŷ_probs::AbstractMatrix{<:AbstractFloat},
+    y::AbstractVector{<:Integer},
+    α::AbstractFloat;
     agg::Function=mean)
     
     vocab_size = size(ŷ_probs, 1)
@@ -34,8 +34,8 @@ function label_smoothing_loss(
 end
 
 function negative_log_likelihood(
-    ŷ_probs::AbstractArray{Number,2},
-    y::AbstractVector{Int};
+    ŷ_probs::AbstractMatrix{<:AbstractFloat},
+    y::AbstractVector{<:Integer};
     agg::Function=mean)
 
     @assert size(ŷ_probs, 2) == size(y)
@@ -48,7 +48,7 @@ function negative_log_likelihood(
 end
 
 # Copied from https://github.com/FluxML/Flux.jl/blob/7a9a5eef2532d7029a960f7209b9a2e2fc76c29d/src/losses/functions.jl#L135, licensed under MIT License.
-function label_smoothing(y::Union{AbstractArray,Number}, α::Number; dims::Int=1)
+function label_smoothing(y::Union{AbstractArray,AbstractFloat}, α::AbstractFloat; dims::Integer=1)
     if !(0 < α < 1)
         throw(ArgumentError("α must be between 0 and 1"))
     end

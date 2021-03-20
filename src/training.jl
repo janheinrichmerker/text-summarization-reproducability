@@ -54,7 +54,10 @@ function preprocess(text::String)::AbstractVector{String}
     return ["[CLS]"; tokens; "[SEP]"]
 end
 
-function loss(inputs::AbstractVector{String}, outputs::AbstractVector{String})
+function loss(
+    inputs::AbstractVector{<:String},
+    outputs::AbstractVector{<:String}
+)::AbstractFloat
     prediction = model.transformers(vocabulary, inputs, outputs)
     ground_truth = onehotbatch(outputs, vocabulary.list)
     # TODO Replace with label smoothing loss and KL divergence.

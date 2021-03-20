@@ -16,11 +16,11 @@ function (decoder::Decoder)(target_embedding, encoded_embedding)
 end
 
 function Decoder(
-    size::Int,
-    head::Int,
-    hs::Int,
-    ps::Int,
-    layer::Int;
+    size::Integer,
+    head::Integer,
+    hs::Integer,
+    ps::Integer,
+    layer::Integer;
     act=relu,
     pdrop=0.1
 )::Decoder

@@ -61,18 +61,18 @@ function fetch_google_drive(url, localdir)
         filename = filename_match !== nothing ? filename_match.captures[] : basename(tempname())
         filepath = joinpath(localdir, filename)
 
-        parsed_total_bytes::Union{Number,Nothing} = tryparse(
+        parsed_total_bytes = tryparse(
             Float64, 
             split(
                 HTTP.header(response, "Content-Range"), 
                 '/'
             )[end]
         )
-        total_bytes::Number = parsed_total_bytes !== nothing ? parsed_total_bytes : NaN
-        downloaded_bytes::Number = 0
+        total_bytes = parsed_total_bytes !== nothing ? parsed_total_bytes : NaN
+        downloaded_bytes = 0
         start_time::DateTime = Dates.now()
         prev_time::DateTime = Dates.now()
-        period::Number = DataDeps.progress_update_period()
+        period = DataDeps.progress_update_period()
 
         function report_callback()
             if filename_match === nothing && isnan(total_bytes)

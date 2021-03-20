@@ -33,7 +33,7 @@ function (transformers::TransformersModel)(
     vocabulary::Vocabulary{T},
     inputs::AbstractVector{T},
     outputs::AbstractVector{T}
-)::AbstractMatrix{AbstractFloat} where T
+)::AbstractMatrix{<:AbstractFloat} where T
     # Encode inputs.
     input_embedding = _embed(transformers, vocabulary, inputs)
     encoded_embedding = transformers.encoder(input_embedding)
@@ -49,15 +49,15 @@ end
 
 function TransformersModel(
     embed::AbstractEmbed,
-    size::Int,
-    head::Int,
-    hs::Int,
-    ps::Int,
-    layer::Int,
-    vocab_size::Int;
+    size::Integer,
+    head::Integer,
+    hs::Integer,
+    ps::Integer,
+    layer::Integer,
+    vocab_size::Integer;
     act=relu,
     pdrop=0.1,
-    length_normalization::Number=0.0
+    length_normalization::AbstractFloat=0.0
 )
     return TransformersModel(
         embed,

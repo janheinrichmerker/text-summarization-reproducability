@@ -11,7 +11,7 @@ function expand(
     path::Path{T},
     predict::Function,
     vocabulary::AbstractVector{T},
-    length_normalization::Number
+    length_normalization::AbstractFloat
 )::AbstractVector{Path{T}} where T
     # Compute probabilities for next token.
     log_word_probabilities = predict(path.sequence)
@@ -43,7 +43,7 @@ function expand(
     predict::Function,
     vocabulary::AbstractVector{T},
     expandable::Function,
-    length_normalization::Number
+    length_normalization::AbstractFloat
 )::AbstractVector{Path{T}} where T
     if expandable(path.sequence)
         # Expand next token.
@@ -80,7 +80,7 @@ end
 
 # Beam search for generating sequences.
 function beam_search(
-    width::Int, 
+    width::Integer, 
     vocabulary::AbstractVector{T}, 
     # Function returning a column vector of log probabilities for each word 
     # in the vocabulary, given the current sequence.
@@ -89,7 +89,7 @@ function beam_search(
     # One might for example check for an end token.
     expandable::Function;
     initial_sequence::AbstractVector{T}=[],
-    length_normalization::Number=0.0,
+    length_normalization::AbstractFloat=0.0,
 )::AbstractVector{T} where T
     # Best current path.
     best_path::Path{T} = Path(initial_sequence, 1.0, -Inf)
@@ -137,15 +137,15 @@ end
 
 # Beam search for generating sequences.
 function beam_search(
-    width::Int, 
+    width::Integer, 
     vocabulary::AbstractVector{T}, 
     # Function returning a column vector of log probabilities for each word 
     # in the vocabulary, given the current sequence.
     predict::Function,
     # Max steps to expand.
-    steps::Int;
+    steps::Integer;
     initial_sequence::AbstractVector{T}=[],
-    length_normalization::Number=0.0,
+    length_normalization::AbstractFloat=0.0,
 )::AbstractVector{T} where T
     beam_search(
         width,
@@ -159,7 +159,7 @@ end
 
 # Beam search for generating sequences.
 function beam_search(
-    width::Int, 
+    width::Integer, 
     vocabulary::AbstractVector{T}, 
     # Function returning a column vector of log probabilities for each word 
     # in the vocabulary, given the current sequence.
@@ -168,9 +168,9 @@ function beam_search(
     # One might for example check for an end token.
     expandable::Function,
     # Max steps to expand.
-    steps::Int;
+    steps::Integer;
     initial_sequence::AbstractVector{T}=[],
-    length_normalization::Number=0.0,
+    length_normalization::AbstractFloat=0.0,
 )::AbstractVector{T} where T
     beam_search(
         width,
@@ -209,7 +209,7 @@ function greedy_search(
     # in the vocabulary, given the current sequence and input.
     predict::Function,
     # Max steps to expand.
-    steps::Int;
+    steps::Integer;
     initial_sequence::AbstractVector{T}=[]
 )::AbstractVector{T} where T
     beam_search(
@@ -231,7 +231,7 @@ function greedy_search(
     # One might for example check for an end token.
     expandable::Function,
     # Max steps to expand.
-    steps::Int;
+    steps::Integer;
     initial_sequence::AbstractVector{T}=[]
 )::AbstractVector{T} where T
     beam_search(

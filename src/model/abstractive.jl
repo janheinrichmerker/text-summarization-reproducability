@@ -11,7 +11,7 @@ include("translator.jl")
 # TransformerAbs transformer model for abstractive summarization
 # from the "Text Summarization with Pretrained Encoders" paper 
 # by Liu et al. (2019) as described on pages 6-7.
-function TransformerAbs(vocab_size::Int)::Translator
+function TransformerAbs(vocab_size::Integer)::Translator
     return Translator(
         TransformersModel(
             Embed(768, vocab_size),
@@ -28,7 +28,7 @@ end
 # by Liu et al. (2019) as described on page 6.
 function BertAbs(
     bert_model::TransformerModel{<:AbstractEmbed,<:Bert,<:Any},
-    vocab_size::Int
+    vocab_size::Integer
 )::Translator
     return Translator(
         TransformersModel(

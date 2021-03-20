@@ -30,9 +30,9 @@ end
 
 function Translator(
     transformers::TransformersModel,
-    beam_width::Int,
-    max_length::Int;
-    length_normalization::Number=0.0
+    beam_width::Integer,
+    max_length::Integer;
+    length_normalization::AbstractFloat=0.0
 )
     return Translator(
         transformers,

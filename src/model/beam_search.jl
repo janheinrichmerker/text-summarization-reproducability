@@ -4,9 +4,9 @@ using Flux:@functor
 include("../search/beam_search.jl")
 
 struct BeamSearch
-    width::Int
-    steps::Int
-    length_normalization::Number
+    width::Integer
+    steps::Integer
+    length_normalization::AbstractFloat
 end
 
 @functor BeamSearch
@@ -29,9 +29,9 @@ function (search::BeamSearch)(
 end
 
 function BeamSearch(
-    width::Int,
-    steps::Int;
-    length_normalization::Number=0.0,
+    width::Integer,
+    steps::Integer;
+    length_normalization::AbstractFloat=0.0,
 )
     return BeamSearch(width, steps, length_normalization)
 end
