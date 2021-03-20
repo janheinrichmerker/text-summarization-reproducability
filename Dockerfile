@@ -2,16 +2,13 @@ FROM julia:1.5.3
 
 WORKDIR /app
 
-# Install dependencies.
+# Install and pre-compile dependencies.
 COPY Project.toml Manifest.toml ./
-RUN julia --project=./ --eval="using Pkg; Pkg.instantiate()"
+RUN julia --project=./ --eval="using Pkg; Pkg.instantiate(); Pkg.precompile()"
 
 # Setup PyCall to use a Conda environment.
 COPY src/setup_python.jl ./src/
 RUN julia --project=./ ./src/setup_python.jl
-
-# Pre-compile Pluto.
-RUN julia --project=./ --eval="using Pluto"
 
 # Copy remaining source files.
 COPY src/ ./src/
