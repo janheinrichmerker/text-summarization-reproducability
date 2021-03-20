@@ -10,6 +10,8 @@ using CUDA
 using Transformers
 using Transformers.Basic
 using Transformers.Pretrain
+using BSON: @save
+
 
 if !CUDA.functional(true)
     @warn "You're training the model without GPU support."
@@ -45,7 +47,7 @@ vocabulary = Vocabulary(wordpiece)
 
 @info "Create summarization model from BERT model."
 include("model/abstractive.jl")
-model = BertAbs(bert_model, length(vocabulary)) |> gpu
+model = BertAbs(bert_model, length(vocabulary))
 @show model
 
 
@@ -86,8 +88,8 @@ reset!(model)
 max_epochs = 200_000
 for (epoch, summary) ∈ zip(1:200_000, cnndm_train)
     @info "Training epoch $epoch/$max_epochs."
-    inputs = summary.source |> preprocess |> gpu
-    outputs = summary.target |> preprocess |> gpu
+    inputs = summary.source |> preprocess
+    outputs = summary.target |> preprocess
 
     @info "Take gradients."
     @time begin
@@ -111,6 +113,7 @@ for (epoch, summary) ∈ zip(1:200_000, cnndm_train)
 
     if epoch % 2500 == 0
         @info "Save model snapshot."
-        # Save model snapshot, evaluuate on validation set.
+        @save "../out/bert-abs-$epoch-$(now()).bson" model optimizer_decoder # optimizer_encoder
+        # Evaluate on validation set.
     end
 end
