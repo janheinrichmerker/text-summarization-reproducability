@@ -17,7 +17,7 @@ Warmup(;η=0.001, w=10_000) = Warmup(η, w)
 
 struct WarmupADAM
     adam::ADAM
-    warmup::ScheduleIterator{Warmup,S}
+    warmup::ScheduleIterator{Warmup,<:Any}
 end
 
 WarmupADAM(η=0.001, w=10_000, β=(0.9, 0.999)) = WarmupADAM(
