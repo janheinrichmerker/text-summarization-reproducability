@@ -1,8 +1,7 @@
 using PyCall
 using Conda
 
-Conda.add("pytorch")
-torch = pyimport("torch")
+torch = pyimport_conda("torch", "pytorch")
 
 # Load preprocessed data from a single PyTorch Pickle file.
 # As Julia does not support parsing PyTorch files itself,
