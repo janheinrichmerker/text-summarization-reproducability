@@ -25,7 +25,7 @@ include("data/loader.jl")
 include("data/model.jl")
 function cnndm_loader(corpus_type::String)::Channel{SummaryPair}
     data_dir = joinpath(
-        datadep"CNN-Dailymail-Preprocessed-BERT",
+        datadep"CNN-Daily-Mail-Preprocessed-BERT",
         "bert_data_cnndm_final"
     )
     return data_loader(data_dir, corpus_type)
