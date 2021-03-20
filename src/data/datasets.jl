@@ -45,7 +45,7 @@ register(
             
         Citing:
         @inproceedings{hermann2015cnndm,
-            author={Karl Moritz Hermann and Tom\'a\v{s} Ko\v{c}isk\'y and Edward Grefenstette and Lasse Espeholt and Will Kay and Mustafa Suleyman and Phil Blunsom},
+            author={Karl Moritz Hermann and Tom\\'a\\v{s} Ko\\v{c}isk\\'y and Edward Grefenstette and Lasse Espeholt and Will Kay and Mustafa Suleyman and Phil Blunsom},
             title={Teaching Machines to Read and Comprehend},
             booktitle={Advances in Neural Information Processing Systems},
             year={2015},
