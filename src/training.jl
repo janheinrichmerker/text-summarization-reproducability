@@ -42,12 +42,12 @@ cnndm_train = cnndm_loader("train")
 
 @info "Load pretrained BERT model."
 bert_model, wordpiece, tokenizer = pretrain"bert-uncased_L-12_H-768_A-12"
-vocabulary = Vocabulary(wordpiece)
+vocabulary = Vocabulary(wordpiece) |> gpu
 
 
 @info "Create summarization model from BERT model."
 include("model/abstractive.jl")
-model = BertAbs(bert_model, length(vocabulary))
+model = BertAbs(bert_model, length(vocabulary)) |> gpu
 @show model
 
 
@@ -57,13 +57,13 @@ function preprocess(text::String)::AbstractVector{String}
 end
 
 function loss(
-    inputs::AbstractVector{<:String},
-    outputs::AbstractVector{<:String}
+    inputs::AbstractVector{String},
+    outputs::AbstractVector{String}
 )::AbstractFloat
-    prediction = model.transformers(vocabulary, inputs, outputs)
-    ground_truth = onehotbatch(outputs, vocabulary.list)
+    @timed prediction = model.transformers(vocabulary, inputs, outputs)
+    @timed ground_truth = onehotbatch(outputs, vocabulary.list)
     # TODO Replace with label smoothing loss and KL divergence.
-    loss = logitcrossentropy(prediction, ground_truth)
+    @timed loss = logitcrossentropy(prediction, ground_truth)
     return loss
 end
 
@@ -76,8 +76,8 @@ optimizer_decoder = WarmupADAM(0.1, 10_000, (0.9, 0.99))
 parameters_encoder = params(model.transformers.encoder)
 @show length(parameters_encoder)
 parameters_decoder = params(
-    model.transformers.embed, 
-    model.transformers.decoder, 
+    # model.transformers.embed, 
+    # model.transformers.decoder, 
     model.transformers.generator
 )
 @show length(parameters_decoder)
@@ -85,35 +85,31 @@ parameters_decoder = params(
 
 
 reset!(model)
-max_epochs = 200_000
-for (epoch, summary) ∈ zip(1:200_000, cnndm_train)
-    @info "Training epoch $epoch/$max_epochs."
-    inputs = summary.source |> preprocess
-    outputs = summary.target |> preprocess
+max_steps = 200_000
+for (step, summary) ∈ zip(1:max_steps, cnndm_train)
+    @info "Training step $step/$max_steps."
+    inputs = summary.source |> preprocess |> gpu
+    outputs = summary.target |> preprocess |> gpu
 
     @info "Take gradients."
-    @time begin
-        # local loss_encoder
-        # gradients_encoder = gradient(parameters_encoder) do
-        #     loss_encoder = loss(prediction, ground_truth)
-        #     return loss_encoder
-        # end
-        # @show loss_encoder
-        local loss_decoder
-        gradients_decoder = gradient(parameters_decoder) do
-            loss_decoder = loss(inputs, outputs)
-            return loss_decoder
-        end
-        @show loss_decoder
+    # local loss_encoder
+    # @timed gradients_encoder = gradient(parameters_encoder) do
+    #     loss_encoder = loss(prediction, ground_truth)
+    #     return loss_encoder
+    # end
+    local loss_decoder
+    @timed gradients_decoder = gradient(parameters_decoder) do
+        loss_decoder = loss(inputs, outputs)
+        return loss_decoder
     end
 
     @info "Update model."
     # update!(optimizer_encoder, parameters_encoder, gradients_encoder)
-    update!(optimizer_decoder, parameters_decoder, gradients_decoder)
+    @timed update!(optimizer_decoder, parameters_decoder, gradients_decoder)
 
-    if epoch % 2500 == 0
+    if step % 2500 == 0 || step % 100 == 0
         @info "Save model snapshot."
-        @save "../out/bert-abs-$epoch-$(now()).bson" model optimizer_decoder # optimizer_encoder
+        @save "../out/bert-abs-$step-$(now()).bson" model optimizer_decoder # optimizer_encoder
         # Evaluate on validation set.
     end
 end
