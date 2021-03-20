@@ -32,6 +32,16 @@ at [Martin Luther University Halle-Wittenberg](https://uni-halle.de)._
     julia --project=./ ./src/start_notebook.jl
     ```
 
+#### Local Julia installation
+
+If needed (e.g., on a GPU cluster), you can install Julia locally.
+
+```shell script
+./install-julia.sh
+```
+
+You can then run Julia with `./julia`.
+
 ### Docker container
 
 1. Install [Docker](https://docs.docker.com/get-docker/).
