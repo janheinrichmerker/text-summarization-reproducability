@@ -30,7 +30,7 @@ model = BertAbs(bert_model, length(vocabulary))
 prediction = model.transformers(vocabulary, inputs, outputs)
 @show size(prediction)
 # Use original one-hot word probabilities from target for comparison.
-ground_truth = onehotbatch(target, vocabulary.list)
+ground_truth = onehotbatch(outputs, vocabulary.list)
 @show size(ground_truth)
 
 include("loss.jl")
