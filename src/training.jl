@@ -1,11 +1,11 @@
 @info "Load DataDeps package."
 using DataDeps
+@info "Load CUDA package."
+using CUDA
 @info "Load Flux package."
 using Flux
 using Flux:update!,reset!,onehotbatch
 using Flux.Losses:logitcrossentropy
-@info "Load CUDA package."
-using CUDA
 @info "Load Transformers package."
 using Transformers
 using Transformers.Basic
