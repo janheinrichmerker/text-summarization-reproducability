@@ -1,7 +1,8 @@
 using Flux
 using ParameterSchedulers
+using ParameterSchedulers:AbstractSchedule
 
-struct Warmup
+struct Warmup <: AbstractSchedule
     learning_rate::AbstractFloat
     warmup::AbstractFloat
 end
@@ -16,10 +17,13 @@ Warmup(;η=0.001, w=10_000) = Warmup(η, w)
 
 struct WarmupADAM
     adam::ADAM
-    warmup::Warmup
+    warmup::ScheduleIterator{Warmup,S}
 end
 
-WarmupADAM(η=0.001, w=10_000, β=(0.9, 0.999)) = WarmupADAM(ADAM(0.0, β), Warmup(η, w))
+WarmupADAM(η=0.001, w=10_000, β=(0.9, 0.999)) = WarmupADAM(
+    ADAM(0.0, β), 
+    ScheduleIterator(Warmup(η, w))
+)
 
 WarmupADAM(;η=0.001, w=10_000, β=(0.9, 0.999)) = WarmupADAM(η, w, β)
 
