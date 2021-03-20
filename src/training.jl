@@ -60,10 +60,10 @@ function loss(
     inputs::AbstractVector{String},
     outputs::AbstractVector{String}
 )::AbstractFloat
-    @timed prediction = model.transformers(vocabulary, inputs, outputs)
-    @timed ground_truth = onehotbatch(outputs, vocabulary.list)
+    prediction = model.transformers(vocabulary, inputs, outputs)
+    ground_truth = onehotbatch(outputs, vocabulary.list)
     # TODO Replace with label smoothing loss and KL divergence.
-    @timed loss = logitcrossentropy(prediction, ground_truth)
+    loss = logitcrossentropy(prediction, ground_truth)
     return loss
 end
 
