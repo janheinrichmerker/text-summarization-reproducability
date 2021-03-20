@@ -9,6 +9,7 @@ if [ -z `which julia` ]; then
   URL="https://julialang-s3.julialang.org/bin/linux/x64/$(cut -d '.' -f -2 <<< "$VERSION")/julia-$VERSION-linux-x86_64.tar.gz"
   mkdir ./tmp
   wget -nv $URL -O ./tmp/julia.tar.gz
+  mkdir "./julia-$VERSION"
   tar -x -f ./tmp/julia.tar.gz -C "./julia-$VERSION" --strip-components 1
   rm ./tmp/julia.tar.gz
   ln -s "./julia-$VERSION/bin/julia" ./julia
