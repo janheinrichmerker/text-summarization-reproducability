@@ -17,29 +17,31 @@ end
 
 @functor TransformersModel
 
-function _embed(
-    transformers::TransformersModel,
-    vocabulary::Vocabulary{T},
-    sequence::AbstractVector{T}
-) where T
-    indices = vocabulary(sequence)
-    # if typeof(transformers.embed) <: CompositeEmbedding
-    #     indices = (tok = indices, segment = fill(1, length(indices)))
-    # end
-    return transformers.embed(indices)
-end
-
 function (transformers::TransformersModel)(
     vocabulary::Vocabulary{T},
-    inputs::AbstractVector{T},
-    outputs::AbstractVector{T}
+    inputs::Vector{T},
+    outputs::Vector{T}
 )::AbstractMatrix{<:AbstractFloat} where T
     # Encode inputs.
-    input_embedding = _embed(transformers, vocabulary, inputs)
+    input_indices = vocabulary(inputs)
+    # if typeof(transformers.embed) <: CompositeEmbedding
+    #     input_indices = (
+    #         tok = input_indices,
+    #         segment = fill(1, length(input_indices))
+    #     )
+    # end
+    input_embedding = transformers.embed(input_indices)
     encoded_embedding = transformers.encoder(input_embedding)
 
     # Decode outputs.
-    output_embedding = _embed(transformers, vocabulary, outputs)
+    output_indices = vocabulary(outputs)
+    # if typeof(transformers.embed) <: CompositeEmbedding
+    #     output_indices = (
+    #         tok = output_indices,
+    #         segment = fill(1, length(output_indices))
+    #     )
+    # end
+    output_embedding = transformers.embed(output_indices)
     decoded_embedding = transformers.decoder(output_embedding, encoded_embedding)
 
     # Calculate probabilities for next token.
