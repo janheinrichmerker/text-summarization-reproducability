@@ -34,8 +34,8 @@ end
 # @show first(cnndm_loader("valid"))
 
 cnndm_train = cnndm_loader("train")
-cnndm_test = cnndm_loader("test")
-cnndm_valid = cnndm_loader("valid")
+# cnndm_test = cnndm_loader("test")
+# cnndm_valid = cnndm_loader("valid")
 
 
 @info "Load pretrained BERT model."
@@ -55,19 +55,19 @@ function preprocess(text::String)::AbstractVector{String}
 end
 
 function loss(inputs::AbstractVector{String}, outputs::AbstractVector{String})
-    @info "Predict new distribution."
     prediction = model.transformers(vocabulary, inputs, outputs)
-    @info "Compute ground truth distribution."
     ground_truth = onehotbatch(outputs, vocabulary.list)
     # TODO Replace with label smoothing loss and KL divergence.
-    @info "Calculate loss."
-    return logitcrossentropy(prediction, ground_truth)
+    loss = logitcrossentropy(prediction, ground_truth)
+    return loss
 end
 
 
 include("training/optimizers.jl")
 optimizer_encoder = WarmupADAM(2ℯ^(-3), 20_000, (0.9, 0.99))
 optimizer_decoder = WarmupADAM(0.1, 10_000, (0.9, 0.99))
+
+
 parameters_encoder = params(model.transformers.encoder)
 @show length(parameters_encoder)
 parameters_decoder = params(
@@ -76,28 +76,35 @@ parameters_decoder = params(
     model.transformers.generator
 )
 @show length(parameters_decoder)
-max_epochs = 200_000
+@info "Found $(length(parameters_encoder)) trainable parameters for encoder and $(length(parameters_decoder)) parameters for decoder."
 
 
 reset!(model)
+max_epochs = 200_000
 for (epoch, summary) ∈ zip(1:200_000, cnndm_train)
-    @info "Training epoch $epoch."
+    @info "Training epoch $epoch/$max_epochs."
     inputs = summary.source |> preprocess
     outputs = summary.target |> preprocess
 
     @info "Take gradients."
+    # local loss_encoder
     # gradients_encoder = gradient(parameters_encoder) do
-    #     loss(inputs, outputs)
+    #     loss_encoder = loss(prediction, ground_truth)
+    #     return loss_encoder
     # end
+    # @show loss_encoder
+    local loss_decoder
     gradients_decoder = gradient(parameters_decoder) do
-        loss(inputs, outputs)
+        loss_decoder = loss(inputs, outputs)
+        return loss_decoder
     end
+    @show loss_decoder
 
     @info "Update model."
     # update!(optimizer_encoder, parameters_encoder, gradients_encoder)
     update!(optimizer_decoder, parameters_decoder, gradients_decoder)
 
-    if step % 2500
+    if epoch % 2500
         @info "Save model snapshot."
         # Save model snapshot, evaluuate on validation set.
     end
