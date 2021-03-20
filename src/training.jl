@@ -90,24 +90,26 @@ for (epoch, summary) ∈ zip(1:200_000, cnndm_train)
     outputs = summary.target |> preprocess
 
     @info "Take gradients."
-    # local loss_encoder
-    # gradients_encoder = gradient(parameters_encoder) do
-    #     loss_encoder = loss(prediction, ground_truth)
-    #     return loss_encoder
-    # end
-    # @show loss_encoder
-    local loss_decoder
-    gradients_decoder = gradient(parameters_decoder) do
-        loss_decoder = loss(inputs, outputs)
-        return loss_decoder
+    @time begin
+        # local loss_encoder
+        # gradients_encoder = gradient(parameters_encoder) do
+        #     loss_encoder = loss(prediction, ground_truth)
+        #     return loss_encoder
+        # end
+        # @show loss_encoder
+        local loss_decoder
+        gradients_decoder = gradient(parameters_decoder) do
+            loss_decoder = loss(inputs, outputs)
+            return loss_decoder
+        end
+        @show loss_decoder
     end
-    @show loss_decoder
 
     @info "Update model."
     # update!(optimizer_encoder, parameters_encoder, gradients_encoder)
     update!(optimizer_decoder, parameters_decoder, gradients_decoder)
 
-    if epoch % 2500
+    if epoch % 2500 == 0
         @info "Save model snapshot."
         # Save model snapshot, evaluuate on validation set.
     end
