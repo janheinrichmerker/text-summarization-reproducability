@@ -19,7 +19,7 @@ end
 enable_gpu(true)
 
 
-@info "Load preprocessed data (CNN/Dailymail)."
+@info "Load preprocessed data (CNN / Daily Mail)."
 include("data/datasets.jl")
 include("data/loader.jl")
 include("data/model.jl")
@@ -61,7 +61,7 @@ function loss(
     outputs::AbstractVector{String}
 )::AbstractFloat
     prediction = model.transformers(vocabulary, inputs, outputs)
-    ground_truth = onehotbatch(outputs, vocabulary.list)
+    ground_truth = onehotbatch(outputs, vocabulary.list) .|> gpu
     # TODO Replace with label smoothing loss and KL divergence.
     loss = logitcrossentropy(prediction, ground_truth)
     return loss
