@@ -16,7 +16,7 @@ using BSON: @save
 if !CUDA.functional(true)
     @warn "You're training the model without GPU support."
 end
-enable_gpu(false)
+enable_gpu(true)
 
 
 @info "Load preprocessed data (CNN / Daily Mail)."
