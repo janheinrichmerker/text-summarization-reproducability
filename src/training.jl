@@ -4,7 +4,7 @@ using DataDeps
 using CUDA
 @info "Load Flux package."
 using Flux
-using Flux:update!,reset!,onehotbatch
+using Flux:update!,reset!,onehot
 using Flux.Losses:logitcrossentropy
 @info "Load Transformers package."
 using Transformers
@@ -58,8 +58,10 @@ function loss(
     ground_truth::AbstractMatrix{<:Number}
 )::AbstractFloat
     prediction = model.transformers(vocabulary, inputs, outputs)
+    @show typeof(prediction)
     # TODO Replace with label smoothing loss and KL divergence.
     loss = logitcrossentropy(prediction, ground_truth)
+    @show typeof(loss)
     return loss
 end
 
@@ -84,8 +86,11 @@ max_steps = 200_000
 for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
     inputs = summary.source |> preprocess |> todevice
+    @show typeof(inputs)
     outputs = summary.target |> preprocess |> todevice
-    ground_truth = collect(onehotbatch(outputs, vocabulary.list)) |> todevice
+    @show typeof(outputs)
+    ground_truth = onehot(vocabulary, outputs) |> todevice
+    @show typeof(ground_truth)
 
     @info "Take gradients."
     # local loss_encoder
@@ -95,7 +100,7 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     # end
     # @show loss_encoder
     local loss_decoder
-    # gradients_decoder = zeros(length(parameters_decoder))
+    gradients_decoder = zeros(length(parameters_decoder))
     @timed gradients_decoder = gradient(parameters_decoder) do
         loss_decoder = loss(inputs, outputs, ground_truth)
         return loss_decoder
@@ -103,12 +108,14 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @show loss_decoder
 
     @info "Update model."
-    # update!(optimizer_encoder, parameters_encoder, gradients_encoder)
+    # @timed update!(optimizer_encoder, parameters_encoder, gradients_encoder)
     @timed update!(optimizer_decoder, parameters_decoder, gradients_decoder)
 
     if step % 2500 == 0 || step % 100 == 0
         @info "Save model snapshot."
-        @save "../out/bert-abs-$step-$(now()).bson" model optimizer_decoder # optimizer_encoder
+        @save "../out/bert-abs-$step-$(now())-model.bson" model
+        @save "../out/bert-abs-$step-$(now())-opt-enc.bson" optimizer_encoder
+        @save "../out/bert-abs-$step-$(now())-opt-dec.bson" optimizer_decoder
         # Evaluate on validation set.
     end
 end

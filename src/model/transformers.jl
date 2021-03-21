@@ -23,7 +23,8 @@ function (transformers::TransformersModel)(
     outputs::Vector{T}
 )::AbstractMatrix{<:AbstractFloat} where T
     # Encode inputs.
-    input_indices = vocabulary(inputs)
+    input_indices = vocabulary(inputs) |> todevice
+    @show typeof(input_indices)
     if typeof(transformers.embed) <: CompositeEmbedding
         input_indices = (
             tok = input_indices,
@@ -31,10 +32,13 @@ function (transformers::TransformersModel)(
         )
     end
     input_embedding = transformers.embed(input_indices)
+    @show typeof(input_embedding)
     encoded_embedding = transformers.encoder(input_embedding)
+    @show typeof(encoded_embedding)
 
     # Decode outputs.
-    output_indices = vocabulary(outputs)
+    output_indices = vocabulary(outputs) |> todevice
+    @show typeof(output_indices)
     if typeof(transformers.embed) <: CompositeEmbedding
         output_indices = (
             tok = output_indices,
@@ -42,7 +46,9 @@ function (transformers::TransformersModel)(
         )
     end
     output_embedding = transformers.embed(output_indices)
+    @show typeof(output_embedding)
     decoded_embedding = transformers.decoder(output_embedding, encoded_embedding)
+    @show typeof(decoded_embedding)
 
     # Calculate probabilities for next token.
     return transformers.generator(decoded_embedding)
