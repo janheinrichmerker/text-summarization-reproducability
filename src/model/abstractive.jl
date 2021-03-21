@@ -15,7 +15,7 @@ include("translator.jl")
 function TransformerAbs(vocab_size::Integer)::Translator
     return Translator(
         TransformersModel(
-            WordPositionEmbed(768, vocab_size),
+            WordPositionEmbed(768, vocab_size, trainable=true),
             768, 8, 96, 2048, 6, 
             vocab_size, 
             pdrop=0.1,
@@ -36,7 +36,7 @@ function BertAbs(
             # It's not clear how the random embedding is "added to"
             # BERT embeddings.
             # bert_model.embed,
-            WordPositionEmbed(768, vocab_size),
+            WordPositionEmbed(768, vocab_size, trainable=true),
             bert_model.transformers,
             Decoder(768, 8, 96, 2048, 6, pdrop=0.1),
             Generator(768, vocab_size)
