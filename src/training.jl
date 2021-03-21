@@ -76,8 +76,8 @@ optimizer_decoder = WarmupADAM(0.1, 10_000, (0.9, 0.99))
 parameters_encoder = params(model.transformers.encoder)
 @show length(parameters_encoder)
 parameters_decoder = params(
-    # model.transformers.embed, 
-    # model.transformers.decoder, 
+    model.transformers.embed, 
+    model.transformers.decoder, 
     model.transformers.generator
 )
 @show length(parameters_decoder)
