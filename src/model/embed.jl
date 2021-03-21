@@ -1,8 +1,7 @@
 using Transformers.Basic
-using Transformers.Basic:AbstractEmbed
 using Flux:@functor
 
-struct WordPositionEmbed <: AbstractEmbed
+struct WordPositionEmbed
     word::Embed
     position::PositionEmbedding
 end
