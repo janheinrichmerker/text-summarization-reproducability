@@ -4,6 +4,7 @@ using Flux
 using Flux:@functor, onecold
 
 include("decoder.jl")
+include("embed.jl")
 include("generator.jl")
 include("transformers.jl")
 include("translator.jl")
@@ -14,7 +15,7 @@ include("translator.jl")
 function TransformerAbs(vocab_size::Integer)::Translator
     return Translator(
         TransformersModel(
-            Embed(768, vocab_size),
+            WordPositionEmbed(768, vocab_size),
             768, 8, 96, 2048, 6, 
             vocab_size, 
             pdrop=0.1,
@@ -34,8 +35,8 @@ function BertAbs(
         TransformersModel(
             # It's not clear how the random embedding is "added to"
             # BERT embeddings.
-            bert_model.embed,
-            # Embed(768, vocab_size),
+            # bert_model.embed,
+            WordPositionEmbed(768, vocab_size),
             bert_model.transformers,
             Decoder(768, 8, 96, 2048, 6, pdrop=0.1),
             Generator(768, vocab_size)
