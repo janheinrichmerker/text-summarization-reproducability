@@ -42,12 +42,12 @@ cnndm_train = cnndm_loader("train")
 
 @info "Load pretrained BERT model."
 bert_model, wordpiece, tokenizer = pretrain"bert-uncased_L-12_H-768_A-12"
-vocabulary = Vocabulary(wordpiece) |> gpu
+vocabulary = Vocabulary(wordpiece) |> todevice
 
 
 @info "Create summarization model from BERT model."
 include("model/abstractive.jl")
-model = BertAbs(bert_model, length(vocabulary)) |> gpu
+model = BertAbs(bert_model, length(vocabulary)) |> todevice
 @show model
 
 
@@ -88,9 +88,9 @@ reset!(model)
 max_steps = 200_000
 for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
-    inputs = summary.source |> preprocess |> gpu
-    outputs = summary.target |> preprocess |> gpu
-    ground_truth = onehotbatch(outputs |> cpu, vocabulary.list) |> gpu
+    inputs = summary.source |> preprocess |> todevice
+    outputs = summary.target |> preprocess |> todevice
+    ground_truth = onehotbatch(outputs |> cpu, vocabulary.list) |> todevice
 
     @info "Take gradients."
     # local loss_encoder
