@@ -28,7 +28,7 @@ end
 # from the "Text Summarization with Pretrained Encoders" paper 
 # by Liu et al. (2019) as described on page 6.
 function BertAbs(
-    bert_model::TransformerModel{<:AbstractEmbed,<:Bert,<:Any},
+    bert_model::TransformerModel{<:CompositeEmbedding,<:Bert,<:Any},
     vocab_size::Integer
 )::Translator
     return Translator(

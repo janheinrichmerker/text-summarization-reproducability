@@ -49,7 +49,7 @@ function (transformers::TransformersModel)(
 end
 
 function TransformersModel(
-    embed::AbstractEmbed,
+    embed::Union{WordPositionEmbed,CompositeEmbedding},
     size::Integer,
     head::Integer,
     hs::Integer,
