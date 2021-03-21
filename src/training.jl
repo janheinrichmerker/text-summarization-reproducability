@@ -61,7 +61,7 @@ function loss(
     outputs::AbstractVector{String}
 )::AbstractFloat
     prediction = model.transformers(vocabulary, inputs, outputs)
-    ground_truth = onehotbatch(outputs, vocabulary.list) |> gpu
+    ground_truth = onehotbatch(outputs |> cpu, vocabulary.list |> cpu) |> gpu
     # TODO Replace with label smoothing loss and KL divergence.
     loss = logitcrossentropy(prediction, ground_truth)
     return loss
