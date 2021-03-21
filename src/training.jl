@@ -58,10 +58,10 @@ end
 
 function loss(
     inputs::AbstractVector{String},
-    outputs::AbstractVector{String}
+    outputs::AbstractVector{String},
+    ground_truth::AbstractMatrix{<:Number}
 )::AbstractFloat
     prediction = model.transformers(vocabulary, inputs, outputs)
-    ground_truth = onehotbatch(outputs |> cpu, vocabulary.list |> cpu) |> gpu
     # TODO Replace with label smoothing loss and KL divergence.
     loss = logitcrossentropy(prediction, ground_truth)
     return loss
@@ -90,6 +90,7 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
     inputs = summary.source |> preprocess |> gpu
     outputs = summary.target |> preprocess |> gpu
+    ground_truth = onehotbatch(outputs |> cpu, vocabulary.list) |> gpu
 
     @info "Take gradients."
     # local loss_encoder
@@ -100,7 +101,7 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     # @show loss_encoder
     local loss_decoder
     @timed gradients_decoder = gradient(parameters_decoder) do
-        loss_decoder = loss(inputs, outputs)
+        loss_decoder = loss(inputs, outputs, ground_truth)
         return loss_decoder
     end
     @show loss_decoder
