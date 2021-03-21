@@ -85,7 +85,7 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
     inputs = summary.source |> preprocess |> todevice
     outputs = summary.target |> preprocess |> todevice
-    ground_truth = onehotbatch(outputs |> cpu, vocabulary.list) |> todevice
+    ground_truth = collect(onehotbatch(outputs, vocabulary.list)) |> todevice
 
     @info "Take gradients."
     # local loss_encoder
@@ -95,6 +95,7 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     # end
     # @show loss_encoder
     local loss_decoder
+    # gradients_decoder = zeros(length(parameters_decoder))
     @timed gradients_decoder = gradient(parameters_decoder) do
         loss_decoder = loss(inputs, outputs, ground_truth)
         return loss_decoder
