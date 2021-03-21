@@ -61,7 +61,7 @@ function loss(
     outputs::AbstractVector{String}
 )::AbstractFloat
     prediction = model.transformers(vocabulary, inputs, outputs)
-    ground_truth = onehotbatch(outputs, vocabulary.list) .|> gpu
+    ground_truth = onehotbatch(outputs, vocabulary.list) |> gpu
     # TODO Replace with label smoothing loss and KL divergence.
     loss = logitcrossentropy(prediction, ground_truth)
     return loss
@@ -97,11 +97,13 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     #     loss_encoder = loss(prediction, ground_truth)
     #     return loss_encoder
     # end
+    # @show loss_encoder
     local loss_decoder
     @timed gradients_decoder = gradient(parameters_decoder) do
         loss_decoder = loss(inputs, outputs)
         return loss_decoder
     end
+    @show loss_decoder
 
     @info "Update model."
     # update!(optimizer_encoder, parameters_encoder, gradients_encoder)
