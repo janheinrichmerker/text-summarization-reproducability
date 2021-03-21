@@ -58,10 +58,8 @@ function loss(
     ground_truth::AbstractMatrix{<:Number}
 )::AbstractFloat
     prediction = model.transformers(vocabulary, inputs, outputs)
-    @show typeof(prediction)
     # TODO Replace with label smoothing loss and KL divergence.
     loss = logitcrossentropy(prediction, ground_truth)
-    @show typeof(loss)
     return loss
 end
 
@@ -86,11 +84,8 @@ max_steps = 200_000
 for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
     inputs = summary.source |> preprocess |> todevice
-    @show typeof(inputs)
     outputs = summary.target |> preprocess |> todevice
-    @show typeof(outputs)
     ground_truth = onehot(vocabulary, outputs) |> todevice
-    @show typeof(ground_truth)
 
     @info "Take gradients."
     # local loss_encoder
