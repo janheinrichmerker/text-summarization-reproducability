@@ -34,7 +34,8 @@ function BertAbs(
         TransformersModel(
             # It's not clear how the random embedding is "added to"
             # BERT embeddings.
-            Embed(768, vocab_size), # bert_model.embed,
+            bert_model.embed,
+            # Embed(768, vocab_size),
             bert_model.transformers,
             Decoder(768, 8, 96, 2048, 6, pdrop=0.1),
             Generator(768, vocab_size)
