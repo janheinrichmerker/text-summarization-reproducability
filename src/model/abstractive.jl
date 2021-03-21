@@ -15,7 +15,7 @@ include("translator.jl")
 function TransformerAbs(vocab_size::Integer)::Translator
     return Translator(
         TransformersModel(
-            WordPositionEmbed(768, vocab_size, trainable=false),
+            AbsEmbed(768, vocab_size),
             768, 8, 96, 2048, 6, 
             vocab_size, 
             pdrop=0.1,
@@ -33,10 +33,7 @@ function BertAbs(
 )::Translator
     return Translator(
         TransformersModel(
-            # It's not clear how the random embedding is "added to"
-            # BERT embeddings.
-            # bert_model.embed,
-            WordPositionEmbed(768, vocab_size, trainable=false),
+            AbsEmbed(768, vocab_size),
             bert_model.transformers,
             Decoder(768, 8, 96, 2048, 6, pdrop=0.1),
             Generator(768, vocab_size)
@@ -57,5 +54,22 @@ function AbsSearch()
         # The length normalization parameter α should be 
         # tuned on the development set from 0.6 to 1.0.
         length_normalization=0.8
+    )
+end
+
+# Word embeddings used in the abstractive summarization models 
+# from the "Text Summarization with Pretrained Encoders" paper 
+# by Liu et al. (2019) as described on page 4.
+# TODO It's not clear how the random embedding is 
+# "added to" BERT embeddings.
+function AbsEmbed(size::Integer, vocab_size::Integer)
+    return WordPositionEmbed(
+        size,
+        vocab_size,
+        # Not mentioned in the paper, but CNN and Daily Mail 
+        # documents are limited to 2000 tokens, XSum documents
+        # are shorter then CNN / Daily Mail on average.
+        2048,
+        trainable=true
     )
 end
