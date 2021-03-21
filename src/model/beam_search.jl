@@ -1,5 +1,4 @@
 using Transformers.Basic
-using Flux:@functor
 
 include("../search/beam_search.jl")
 
@@ -8,8 +7,6 @@ struct BeamSearch
     steps::Integer
     length_normalization::AbstractFloat
 end
-
-@functor BeamSearch
 
 function (search::BeamSearch)(
     vocabulary::Vocabulary{T},

@@ -1,7 +1,5 @@
 using Transformers
 using Transformers.Basic
-using Flux
-using Flux:@functor, onecold
 
 include("decoder.jl")
 include("embed.jl")

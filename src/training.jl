@@ -16,7 +16,7 @@ using BSON: @save
 if !CUDA.functional(true)
     @warn "You're training the model without GPU support."
 end
-enable_gpu(true)
+enable_gpu(false)
 
 
 @info "Load preprocessed data (CNN / Daily Mail)."
@@ -30,10 +30,6 @@ function cnndm_loader(corpus_type::String)::Channel{SummaryPair}
     )
     return data_loader(data_dir, corpus_type)
 end
-
-# @show first(cnndm_loader("train"))
-# @show first(cnndm_loader("test"))
-# @show first(cnndm_loader("valid"))
 
 cnndm_train = cnndm_loader("train")
 # cnndm_test = cnndm_loader("test")
@@ -74,14 +70,13 @@ optimizer_decoder = WarmupADAM(0.1, 10_000, (0.9, 0.99))
 
 
 parameters_encoder = params(model.transformers.encoder)
-@show length(parameters_encoder)
 parameters_decoder = params(
     model.transformers.embed, 
     model.transformers.decoder, 
     model.transformers.generator
 )
-@show length(parameters_decoder)
-@info "Found $(length(parameters_encoder)) trainable parameters for encoder and $(length(parameters_decoder)) parameters for decoder."
+include("model/utils.jl")
+@info "Found $(params_count(parameters_encoder)) trainable parameters for encoder and $(params_count(parameters_decoder)) parameters for decoder."
 
 
 reset!(model)

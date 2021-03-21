@@ -1,7 +1,6 @@
+using Flux
 using Transformers
 using Transformers.Basic
-using Flux
-using Flux: @functor
 
 include("transformers.jl")
 include("beam_search.jl")
@@ -11,7 +10,8 @@ struct Translator
     beam_search::BeamSearch
 end
 
-@functor Translator
+Flux.@functor Translator
+Flux.trainable(translator::Translator) = (translator.transformers,)
 
 function (translator::Translator)(
     inputs::AbstractVector{T},

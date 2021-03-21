@@ -1,7 +1,6 @@
+using Flux
 using Transformers
 using Transformers.Basic
-using Flux
-using Flux:@functor
 
 include("encoder.jl")
 include("decoder.jl")
@@ -15,7 +14,8 @@ struct TransformersModel
     generator::Generator
 end
 
-@functor TransformersModel
+Flux.@functor TransformersModel
+Flux.trainable(transformers::TransformersModel) = (transformers.embed, transformers.encoder, transformers.decoder, transformers.generator)
 
 function (transformers::TransformersModel)(
     vocabulary::Vocabulary{T},

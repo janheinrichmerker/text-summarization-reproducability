@@ -13,17 +13,17 @@ enable_gpu(true)
 
 @info "Loading pretrained BERT model."
 bert_model, wordpiece, tokenizer = pretrain"bert-uncased_L-12_H-768_A-12"
-vocabulary = Vocabulary(wordpiece)
+vocabulary = Vocabulary(wordpiece) |> todevice
 @info "Pretrained BERT model loaded successfully."
 
 preprocess(text::String) = ["[CLS]"; wordpiece(tokenizer(text)); "[SEP]"]
-inputs = "Peter Piper picked a peck of pickled peppers." |> preprocess
+inputs = "Peter Piper picked a peck of pickled peppers." |> preprocess |> todevice
 @show inputs
-outputs = "Peter picked pickled peppers." |> preprocess
+outputs = "Peter picked pickled peppers." |> preprocess |> todevice
 @show outputs
 
 include("abstractive.jl")
-model = BertAbs(bert_model, length(vocabulary))
+model = BertAbs(bert_model, length(vocabulary)) |> todevice
 @show model
 
 # Predict new word probabilities for target.
@@ -40,4 +40,4 @@ include("loss.jl")
 # Generate a new sequence from the sample.
 # The output sequence is likely to be nonsense, 
 # because the decoder has not been trained yet.
-@show translated = model(sample, vocabulary)
+@show translated = model("Peter picked peppers.", vocabulary)

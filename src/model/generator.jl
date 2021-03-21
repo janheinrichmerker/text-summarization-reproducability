@@ -1,12 +1,12 @@
-using Transformers.Basic
 using Flux
-using Flux:@functor
+using Transformers.Basic
 
 struct Generator
     chain::Positionwise
 end
 
-@functor Generator
+Flux.@functor Generator
+Flux.trainable(generator::Generator) = (generator.chain,)
 
 function (generator::Generator)(embedding)
     return generator.chain(embedding)

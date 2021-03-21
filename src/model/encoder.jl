@@ -1,11 +1,12 @@
+using Flux
 using Transformers.Basic
-using Flux:@functor
 
 struct Encoder
     layers::Array{<:Transformer} 
 end
 
-@functor Encoder
+Flux.@functor Encoder
+Flux.trainable(encoder::Encoder) = (encoder.layers,)
 
 function (encoder::Encoder)(embedding)
     return foldl(

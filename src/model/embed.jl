@@ -1,12 +1,13 @@
+using  Flux
 using Transformers.Basic
-using Flux:@functor
 
 struct WordPositionEmbed
     word::Embed
     position::PositionEmbedding
 end
 
-@functor WordPositionEmbed
+Flux.@functor WordPositionEmbed
+Flux.trainable(embed::WordPositionEmbed) = (embed.word, embed.position)
 
 function (embed::WordPositionEmbed)(x)
     word_embedding = embed.word(x) 
