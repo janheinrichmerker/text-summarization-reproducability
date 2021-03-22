@@ -76,35 +76,38 @@ parameters_decoder = params(
     model.transformers.generator
 )
 include("model/utils.jl")
-@info "Found $(params_count(parameters_encoder)) trainable parameters for encoder and $(params_count(parameters_decoder)) parameters for decoder."
+@info "Found $(params_count(parameters_encoder)) trainable parameters for encoder and $(params_count(parameters_decoder)) parameters for decoder, embeddings, and generator."
 
 
 reset!(model)
 max_steps = 200_000
 for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
+
     inputs = summary.source |> preprocess |> todevice
     outputs = summary.target |> preprocess |> todevice
     ground_truth = onehot(vocabulary, outputs) |> todevice
 
+
     @info "Take gradients."
-    # local loss_encoder
-    # @timed gradients_encoder = gradient(parameters_encoder) do
-    #     loss_encoder = loss(prediction, ground_truth)
-    #     return loss_encoder
-    # end
-    # @show loss_encoder
+    local loss_encoder
+    @timed gradients_encoder = gradient(parameters_encoder) do
+        loss_encoder = loss(inputs, outputs, ground_truth)
+        return loss_encoder
+    end
+    @show loss_encoder
     local loss_decoder
-    gradients_decoder = zeros(length(parameters_decoder))
     @timed gradients_decoder = gradient(parameters_decoder) do
         loss_decoder = loss(inputs, outputs, ground_truth)
         return loss_decoder
     end
     @show loss_decoder
 
+
     @info "Update model."
-    # @timed update!(optimizer_encoder, parameters_encoder, gradients_encoder)
+    @timed update!(optimizer_encoder, parameters_encoder, gradients_encoder)
     @timed update!(optimizer_decoder, parameters_decoder, gradients_decoder)
+
 
     if step % 2500 == 0 || step % 100 == 0
         @info "Save model snapshot."
