@@ -9,6 +9,7 @@ using Transformers
 using Transformers.Basic
 using Transformers.Pretrain
 using BSON: @save
+using Dates
 
 
 if !CUDA.functional(true)
@@ -43,8 +44,8 @@ vocabulary = Vocabulary(wordpiece) |> todevice
 
 @info "Create summarization model from BERT model."
 include("model/abstractive.jl")
-# model = TransformerAbsTiny(length(vocabulary)) |> todevice
 model = BertAbs(bert_model, length(vocabulary)) |> todevice
+# model = TransformerAbsTiny(length(vocabulary)) |> todevice
 @show model
 
 
@@ -90,6 +91,7 @@ max_steps = 200_000
 snapshot_steps = 2500
 losses_encoder = []
 losses_decoder = []
+start_time = now()
 for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
 
@@ -121,7 +123,7 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
 
     if step % snapshot_steps == 0
         @info "Save model snapshot."
-        snapshot_name = "bert-abs-$(now())-step-$(string(step, pad=6))"
+        snapshot_name = "bert-abs-$(Dates.format(start_time, "yyyy-mm-dd-HH:MM"))-step-$(string(step, pad=6))"
         @save joinpath(out_path, "$snapshot_name-model.bson") model
         @save joinpath(out_path, "$snapshot_name-optimizer-encoder.bson") optimizer_encoder
         @save joinpath(out_path, "$snapshot_name-optimizer-decoder.bson") optimizer_decoder
