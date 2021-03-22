@@ -7,21 +7,6 @@ include("generator.jl")
 include("transformers.jl")
 include("translator.jl")
 
-# TransformerAbs transformer model for abstractive summarization
-# from the "Text Summarization with Pretrained Encoders" paper 
-# by Liu et al. (2019) as described on pages 6-7.
-function TransformerAbs(vocab_size::Integer)::Translator
-    return Translator(
-        TransformersModel(
-            AbsEmbed(768, vocab_size),
-            768, 8, 96, 2048, 6, 
-            vocab_size, 
-            pdrop=0.1,
-        ),
-        AbsSearch()
-    )
-end
-
 # BertAbs transformer model for abstractive summarization 
 # from the "Text Summarization with Pretrained Encoders" paper 
 # by Liu et al. (2019) as described on page 6.
@@ -39,6 +24,35 @@ function BertAbs(
         AbsSearch()
     )
     return 
+end
+
+# TransformerAbs transformer model for abstractive summarization
+# from the "Text Summarization with Pretrained Encoders" paper 
+# by Liu et al. (2019) as described on pages 6-7.
+function TransformerAbs(vocab_size::Integer)::Translator
+    return Translator(
+        TransformersModel(
+            AbsEmbed(768, vocab_size),
+            768, 8, 96, 2048, 6, 
+            vocab_size, 
+            pdrop=0.1,
+        ),
+        AbsSearch()
+    )
+end
+
+# Tiny version of `TransformerAbs` for testing training on devices with
+# less GPU memory.
+function TransformerAbsTiny(vocab_size::Integer)::Translator
+    return Translator(
+        TransformersModel(
+            AbsEmbed(8, vocab_size),
+            8, 4, 2, 16, 2, 
+            vocab_size, 
+            pdrop=0.1,
+        ),
+        AbsSearch()
+    )
 end
 
 # Beam search used in the abstractive summarization models 
@@ -67,7 +81,9 @@ function AbsEmbed(size::Integer, vocab_size::Integer)
         # Not mentioned in the paper, but CNN and Daily Mail 
         # documents are limited to 2000 tokens, XSum documents
         # are shorter then CNN / Daily Mail on average.
-        2048,
+        # Our guess is that no document would be longer
+        # than 4096 tokens.
+        4096,
         trainable=true
     )
 end
