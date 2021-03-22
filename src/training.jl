@@ -50,6 +50,8 @@ model = BertAbs(bert_model, length(vocabulary)) |> todevice
 
 function preprocess(text::String)::AbstractVector{String}
     tokens = text |> tokenizer |> wordpiece
+    max_length = min(4096, length(tokens)) # Truncate to 4096 tokens
+    tokens = tokens[1:max_length]
     return ["[CLS]"; tokens; "[SEP]"]
 end
 
@@ -84,7 +86,7 @@ out_path = mkpath(normpath(joinpath(@__FILE__, "..", "out"))) # Create path for 
 
 reset!(model)
 max_steps = 200_000
-snapshot_steps = 10 # 2500
+snapshot_steps = 2500
 for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
 
@@ -99,7 +101,7 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
         loss_encoder = loss(inputs, outputs, ground_truth)
         return loss_encoder
     end
-    @show loss_encoder
+    @info "Updating encoder parameters." loss_encoder
     @timed update!(optimizer_encoder, parameters_encoder, gradients_encoder)
 
     @info "Train decoder, embeddings, and generator."
@@ -108,7 +110,7 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
         loss_decoder = loss(inputs, outputs, ground_truth)
         return loss_decoder
     end
-    @show loss_decoder
+    @info "Updating decoder, embeddings, and generator parameters." loss_decoder
     @timed update!(optimizer_decoder, parameters_decoder, gradients_decoder)
 
 
