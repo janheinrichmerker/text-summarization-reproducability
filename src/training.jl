@@ -114,9 +114,10 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
 
     if step % snapshot_steps == 0
         @info "Save model snapshot."
-        @save joinpath(out_path, "bert-abs-step-$step-time-$(now())-model.bson") model
-        @save joinpath(out_path, "bert-abs-step-$step-time-$(now())-optimizer-encoder.bson") optimizer_encoder
-        @save joinpath(out_path, "bert-abs-step-$step-time-$(now())-optimizer-decoder.bson") optimizer_decoder
+        snapshot_name = "bert-abs-$(now())-step-$(string(step, pad=6))"
+        @save joinpath(out_path, "$snapshot_name-model.bson") model
+        @save joinpath(out_path, "$snapshot_name-optimizer-encoder.bson") optimizer_encoder
+        @save joinpath(out_path, "$snapshot_name-optimizer-decoder.bson") optimizer_decoder
         # Evaluate on validation set.
     end
 end
