@@ -9,11 +9,11 @@ Flux.@functor Decoder
 Flux.trainable(decoder::Decoder) = (decoder.layers,)
 
 function (decoder::Decoder)(target_embedding, encoded_embedding)
-    return foldl(
-        (embedding, transformer) -> transformer(embedding, encoded_embedding),
-        decoder.layers,
-        init=target_embedding
-    )
+    embedding = target_embedding
+    for transformer ∈ decoder.layers
+        embedding = transformer(embedding, encoded_embedding)
+    end
+    return embedding
 end
 
 function Decoder(
