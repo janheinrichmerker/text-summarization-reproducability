@@ -1,12 +1,10 @@
-@info "Load DataDeps package."
+@info "Load packages."
 using DataDeps
-@info "Load CUDA package."
 using CUDA
-@info "Load Flux package."
+using GPUArrays:allowscalar
 using Flux
 using Flux:update!,reset!,onehot
 using Flux.Losses:logitcrossentropy
-@info "Load Transformers package."
 using Transformers
 using Transformers.Basic
 using Transformers.Pretrain
@@ -17,6 +15,7 @@ if !CUDA.functional(true)
     @warn "You're training the model without GPU support."
 end
 enable_gpu(true)
+allowscalar(false)
 
 
 @info "Load preprocessed data (CNN / Daily Mail)."
@@ -39,7 +38,7 @@ cnndm_train = cnndm_loader("train")
 @info "Load pretrained BERT model."
 bert_model, wordpiece, tokenizer = pretrain"bert-uncased_L-12_H-768_A-12"
 vocabulary = Vocabulary(wordpiece) |> todevice
-# vocabulary = Vocabulary(wordpiece.vocab[1:500], wordpiece.vocab[500]) |> todevice
+# vocabulary = Vocabulary(wordpiece.vocab[1:100], wordpiece.vocab[100]) |> todevice
 
 
 @info "Create summarization model from BERT model."
@@ -55,14 +54,14 @@ function preprocess(text::String)::AbstractVector{String}
 end
 
 include("training/loss.jl")
-label_smoothing_α = 0.1
+label_smoothing_α = 0.0 # Label smoothing doesn't work yet.
 function loss(
     inputs::AbstractVector{String},
     outputs::AbstractVector{String},
     ground_truth::AbstractMatrix{<:Number}
 )::AbstractFloat
     prediction = model.transformers(vocabulary, inputs, outputs)
-    loss = translationloss(prediction, ground_truth, α=label_smoothing_α)
+    loss = logtranslationloss(prediction, ground_truth, α=label_smoothing_α)
     return loss
 end
 
@@ -80,12 +79,12 @@ parameters_decoder = params(
 )
 include("model/utils.jl")
 @info "Found $(params_count(parameters_encoder)) trainable parameters for encoder and $(params_count(parameters_decoder)) parameters for decoder, embeddings, and generator."
-mkpath("../out/") # Create path for storing model snapshots.
+out_path = mkpath(normpath(joinpath(@__FILE__, "..", "out"))) # Create path for storing model snapshots.
 
 
 reset!(model)
 max_steps = 200_000
-snapshot_steps = 100 # 2500
+snapshot_steps = 10 # 2500
 for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
 
@@ -115,9 +114,9 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
 
     if step % snapshot_steps == 0
         @info "Save model snapshot."
-        @save "../out/bert-abs-step-$step-time-$(now())-model.bson" model
-        @save "../out/bert-abs-step-$step-time-$(now())-optimizer-encoder.bson" optimizer_encoder
-        @save "../out/bert-abs-step-$step-time-$(now())-optimizer-decoder.bson" optimizer_decoder
+        @save joinpath(out_path, "bert-abs-step-$step-time-$(now())-model.bson") model
+        @save joinpath(out_path, "bert-abs-step-$step-time-$(now())-optimizer-encoder.bson") optimizer_encoder
+        @save joinpath(out_path, "bert-abs-step-$step-time-$(now())-optimizer-decoder.bson") optimizer_decoder
         # Evaluate on validation set.
     end
 end
