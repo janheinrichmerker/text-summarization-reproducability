@@ -39,10 +39,12 @@ cnndm_train = cnndm_loader("train")
 @info "Load pretrained BERT model."
 bert_model, wordpiece, tokenizer = pretrain"bert-uncased_L-12_H-768_A-12"
 vocabulary = Vocabulary(wordpiece) |> todevice
+# vocabulary = Vocabulary(wordpiece.vocab[1:500], wordpiece.vocab[500]) |> todevice
 
 
 @info "Create summarization model from BERT model."
 include("model/abstractive.jl")
+# model = TransformerAbsTiny(length(vocabulary)) |> todevice
 model = BertAbs(bert_model, length(vocabulary)) |> todevice
 @show model
 
@@ -52,14 +54,15 @@ function preprocess(text::String)::AbstractVector{String}
     return ["[CLS]"; tokens; "[SEP]"]
 end
 
+include("training/loss.jl")
+label_smoothing_α = 0.1
 function loss(
     inputs::AbstractVector{String},
     outputs::AbstractVector{String},
     ground_truth::AbstractMatrix{<:Number}
 )::AbstractFloat
     prediction = model.transformers(vocabulary, inputs, outputs)
-    # TODO Replace with label smoothing loss and KL divergence.
-    loss = logitcrossentropy(prediction, ground_truth)
+    loss = translationloss(prediction, ground_truth, α=label_smoothing_α)
     return loss
 end
 
@@ -77,10 +80,12 @@ parameters_decoder = params(
 )
 include("model/utils.jl")
 @info "Found $(params_count(parameters_encoder)) trainable parameters for encoder and $(params_count(parameters_decoder)) parameters for decoder, embeddings, and generator."
+mkpath("../out/") # Create path for storing model snapshots.
 
 
 reset!(model)
 max_steps = 200_000
+snapshot_steps = 100 # 2500
 for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
 
@@ -89,31 +94,30 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     ground_truth = onehot(vocabulary, outputs) |> todevice
 
 
-    @info "Take gradients."
+    @info "Train encoder."
     local loss_encoder
     @timed gradients_encoder = gradient(parameters_encoder) do
         loss_encoder = loss(inputs, outputs, ground_truth)
         return loss_encoder
     end
     @show loss_encoder
+    @timed update!(optimizer_encoder, parameters_encoder, gradients_encoder)
+
+    @info "Train decoder, embeddings, and generator."
     local loss_decoder
     @timed gradients_decoder = gradient(parameters_decoder) do
         loss_decoder = loss(inputs, outputs, ground_truth)
         return loss_decoder
     end
     @show loss_decoder
-
-
-    @info "Update model."
-    @timed update!(optimizer_encoder, parameters_encoder, gradients_encoder)
     @timed update!(optimizer_decoder, parameters_decoder, gradients_decoder)
 
 
-    if step % 2500 == 0 || step % 100 == 0
+    if step % snapshot_steps == 0
         @info "Save model snapshot."
-        @save "../out/bert-abs-$step-$(now())-model.bson" model
-        @save "../out/bert-abs-$step-$(now())-opt-enc.bson" optimizer_encoder
-        @save "../out/bert-abs-$step-$(now())-opt-dec.bson" optimizer_decoder
+        @save "../out/bert-abs-step-$step-time-$(now())-model.bson" model
+        @save "../out/bert-abs-step-$step-time-$(now())-optimizer-encoder.bson" optimizer_encoder
+        @save "../out/bert-abs-step-$step-time-$(now())-optimizer-decoder.bson" optimizer_decoder
         # Evaluate on validation set.
     end
 end
