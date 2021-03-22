@@ -26,6 +26,12 @@ at [Martin Luther University Halle-Wittenberg](https://uni-halle.de)._
     julia --project=./ ./src/setup_python.jl
     ```
 
+1. Train the model.
+
+    ```shell script
+    julia --project=./ ./src/training.jl
+    ```
+
 1. Start [Pluto](https://github.com/fonsp/Pluto.jl) notebook.
 
     ```shell script
