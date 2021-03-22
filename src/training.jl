@@ -81,12 +81,15 @@ parameters_decoder = params(
 )
 include("model/utils.jl")
 @info "Found $(params_count(parameters_encoder)) trainable parameters for encoder and $(params_count(parameters_decoder)) parameters for decoder, embeddings, and generator."
-out_path = mkpath(normpath(joinpath(@__FILE__, "..", "out"))) # Create path for storing model snapshots.
+out_path = mkpath(normpath(joinpath(@__FILE__, "..", "..", "out"))) # Create path for storing model snapshots.
 
 
 reset!(model)
 max_steps = 200_000
+# snapshot_steps = 1
 snapshot_steps = 2500
+losses_encoder = []
+losses_decoder = []
 for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
 
@@ -101,6 +104,7 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
         loss_encoder = loss(inputs, outputs, ground_truth)
         return loss_encoder
     end
+    push!(losses_encoder, loss_encoder)
     @info "Updating encoder parameters." loss_encoder
     @timed update!(optimizer_encoder, parameters_encoder, gradients_encoder)
 
@@ -110,6 +114,7 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
         loss_decoder = loss(inputs, outputs, ground_truth)
         return loss_decoder
     end
+    push!(losses_decoder, loss_decoder)
     @info "Updating decoder, embeddings, and generator parameters." loss_decoder
     @timed update!(optimizer_decoder, parameters_decoder, gradients_decoder)
 
@@ -120,6 +125,8 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
         @save joinpath(out_path, "$snapshot_name-model.bson") model
         @save joinpath(out_path, "$snapshot_name-optimizer-encoder.bson") optimizer_encoder
         @save joinpath(out_path, "$snapshot_name-optimizer-decoder.bson") optimizer_decoder
+        @save joinpath(out_path, "$snapshot_name-losses-encoder.bson") losses_encoder
+        @save joinpath(out_path, "$snapshot_name-losses-decoder.bson") losses_decoder
         # Evaluate on validation set.
     end
 end
