@@ -46,6 +46,9 @@ md"""
 # ╔═╡ f2ef12a6-8c09-11eb-10ae-0177f2691fdf
 DEBUG=true
 
+# ╔═╡ 1c81ceec-8c0f-11eb-1f30-cbd6c62cf00f
+TRAIN=false
+
 # ╔═╡ 3351b1ca-8c08-11eb-14c3-8f61900721f4
 md"""
 ### Load packages
@@ -150,15 +153,78 @@ end
 # ╔═╡ b1ac4c9e-8c0d-11eb-035a-4b075ffeb8f5
 vocabulary = load_vocabulary()
 
-# ╔═╡ eadeab8e-8c0d-11eb-34ee-77a32f6005ba
+# ╔═╡ fc930278-8c0d-11eb-1c70-2176689ce05c
+md"""
+## Model
+"""
 
+# ╔═╡ 2aeb3028-8c0e-11eb-3ef2-bd37d88ca3bf
+md"""
+Include model definition and components.
+"""
+
+# ╔═╡ aab3df80-8c0e-11eb-37bd-bd40e5a498c7
+md"""
+When debugging on smaller machines, use a tiny transformer encoder-decoder variant instead of the large BERT-based model.
+"""
 
 # ╔═╡ 3f4853dc-8c06-11eb-3a59-cdb9fc854879
 md"""
 ## Training
 """
 
+# ╔═╡ 29f82622-8c0f-11eb-211b-1d275e80ebbf
+md"""
+### Preprocessing
+Preprocess a `String` to a sequence of tokens (not necessarily words), tokenized by the BERT tokenizer.
+"""
+
+# ╔═╡ 0326189c-8c0f-11eb-38d1-595283980478
+function preprocess(text::String)::AbstractVector{String}
+    tokens = text |> tokenizer |> wordpiece
+    max_length = min(4096, length(tokens)) # Truncate to 4096 tokens
+    tokens = tokens[1:max_length]
+    return ["[CLS]"; tokens; "[SEP]"]
+end
+
+# ╔═╡ e1a94230-8c10-11eb-3a01-e765b58c2c29
+md"""
+### Prediction & loss calculation
+"""
+
+# ╔═╡ 5144a378-8c0f-11eb-3b32-6f7661781a0a
+md"""
+Label smoothing factor α tom apply to the one-hot ground-truth labels when calculating the model loss.
+"""
+
 # ╔═╡ 619a2256-8c08-11eb-3544-2b20fba8a71d
+label_smoothing_α = 0.0 # Label smoothing doesn't work yet.
+
+# ╔═╡ c8cf0d90-8c0f-11eb-3a11-4bded8f5be4f
+md"""
+Calculate the model loss for given input, output, and ground truth token probabilities.
+If α is non-zero return Kullback-Leibler divergence between the model's predictions and smoothed ground truth labels. Otherwise cross entropy between predictions and unsmoothed ground truth.
+"""
+
+# ╔═╡ bf061ff0-8c10-11eb-108d-cf008ae94342
+md"""
+### Optimizers
+We use ADAM optimizers with a custom warmup schedule for the learning rate η.
+"""
+
+# ╔═╡ 486cc03c-8c11-11eb-03cb-bb640ac822f5
+md"""
+Encoder schedule:
+η = 2ℯ^(-3) * min(step^(-0.5), step * 20000)
+"""
+
+# ╔═╡ 940c2c58-8c11-11eb-39b6-cf4dc61bd550
+md"""
+Decoder schedule:
+η = 0.1 * min(step^(-0.5), step * 10000)
+"""
+
+# ╔═╡ a46bcb12-8c11-11eb-0493-1505139bb2bf
 
 
 # ╔═╡ 4e3ead50-8c06-11eb-39ff-a3834ba819c2
@@ -243,10 +309,50 @@ cnndm_test() = data.cnndm_loader(data.test_type)
 # ╔═╡ 395e445e-8c0b-11eb-0193-17ea21763de6
 first(cnndm_test())
 
+# ╔═╡ 3c1128ce-8c0e-11eb-12e4-6d52c9d8c0ab
+models = ingredients("model/abstractive.jl")
+
+# ╔═╡ 0cb47e48-8c0e-11eb-0a4d-8f1bd42be2b8
+function load_model()::models.Translator
+	if !DEBUG
+		models.BertAbs(bert_model, length(vocabulary)) |> gpu
+	else
+		models.TransformerAbsTiny(length(vocabulary)) |> gpu
+	end
+end
+
+# ╔═╡ e6db6ba4-8c0e-11eb-1bdb-3bc0b02e2b4f
+model = load_model()
+
+# ╔═╡ a8bcd180-8c10-11eb-17fc-5f3dc5f516f8
+losses = ingredients("training/loss.jl")
+
+# ╔═╡ 811777ce-8c0f-11eb-2ac4-b51b85cd6bc9
+function loss(
+    inputs::AbstractVector{String},
+    outputs::AbstractVector{String},
+    ground_truth::AbstractMatrix{<:Number},
+    translator::models.Translator
+)::AbstractFloat
+    prediction = translator.transformers(vocabulary, inputs, outputs)
+    loss = losses.logtranslationloss(prediction, ground_truth, α=label_smoothing_α)
+    return loss
+end
+
+# ╔═╡ 21da077c-8c11-11eb-0b94-45690ae9a74d
+optimizers = ingredients("training/optimizers.jl")
+
+# ╔═╡ 2c0590d8-8c11-11eb-1ac0-41a24f84ed58
+optimizer_encoder = optimizers.WarmupADAM(2ℯ^(-3), 20_000, (0.9, 0.99)) |> gpu
+
+# ╔═╡ 1cd3487e-8c11-11eb-173a-af13bddc850f
+optimizer_decoder = optimizers.WarmupADAM(0.1, 10_000, (0.9, 0.99)) |> gpu
+
 # ╔═╡ Cell order:
 # ╟─702d3820-84d9-11eb-1895-1d00242e5363
 # ╟─176ccb48-8c08-11eb-3068-3b684ff378b5
 # ╠═f2ef12a6-8c09-11eb-10ae-0177f2691fdf
+# ╠═1c81ceec-8c0f-11eb-1f30-cbd6c62cf00f
 # ╟─3351b1ca-8c08-11eb-14c3-8f61900721f4
 # ╠═2f26e06e-8c08-11eb-18c0-2f8e5b0cf47a
 # ╠═590fdac2-8c08-11eb-1c42-93ff500817c1
@@ -281,9 +387,28 @@ first(cnndm_test())
 # ╟─ff141dee-8c0c-11eb-35e3-c7a7fe623dc3
 # ╠═58ae6888-8c0c-11eb-359c-ed1a2cafbfde
 # ╠═b1ac4c9e-8c0d-11eb-035a-4b075ffeb8f5
-# ╠═eadeab8e-8c0d-11eb-34ee-77a32f6005ba
-# ╠═3f4853dc-8c06-11eb-3a59-cdb9fc854879
+# ╟─fc930278-8c0d-11eb-1c70-2176689ce05c
+# ╟─2aeb3028-8c0e-11eb-3ef2-bd37d88ca3bf
+# ╠═3c1128ce-8c0e-11eb-12e4-6d52c9d8c0ab
+# ╟─aab3df80-8c0e-11eb-37bd-bd40e5a498c7
+# ╠═0cb47e48-8c0e-11eb-0a4d-8f1bd42be2b8
+# ╠═e6db6ba4-8c0e-11eb-1bdb-3bc0b02e2b4f
+# ╟─3f4853dc-8c06-11eb-3a59-cdb9fc854879
+# ╟─29f82622-8c0f-11eb-211b-1d275e80ebbf
+# ╠═0326189c-8c0f-11eb-38d1-595283980478
+# ╟─e1a94230-8c10-11eb-3a01-e765b58c2c29
+# ╠═a8bcd180-8c10-11eb-17fc-5f3dc5f516f8
+# ╟─5144a378-8c0f-11eb-3b32-6f7661781a0a
 # ╠═619a2256-8c08-11eb-3544-2b20fba8a71d
+# ╟─c8cf0d90-8c0f-11eb-3a11-4bded8f5be4f
+# ╠═811777ce-8c0f-11eb-2ac4-b51b85cd6bc9
+# ╟─bf061ff0-8c10-11eb-108d-cf008ae94342
+# ╠═21da077c-8c11-11eb-0b94-45690ae9a74d
+# ╟─486cc03c-8c11-11eb-03cb-bb640ac822f5
+# ╠═2c0590d8-8c11-11eb-1ac0-41a24f84ed58
+# ╟─940c2c58-8c11-11eb-39b6-cf4dc61bd550
+# ╠═1cd3487e-8c11-11eb-173a-af13bddc850f
+# ╠═a46bcb12-8c11-11eb-0493-1505139bb2bf
 # ╟─4e3ead50-8c06-11eb-39ff-a3834ba819c2
 # ╟─d7e44134-8c06-11eb-150f-0b37210cff88
 # ╟─e2449708-8c06-11eb-0d09-991e4917b9d3
