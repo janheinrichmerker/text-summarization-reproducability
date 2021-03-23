@@ -94,8 +94,24 @@ To keep the notebook readable, data loading is included from a separate file.
 (Note the usage of `ingredients()` instead of `include()`: This is needed to avoid namespace clashes and allow for re-executing the cell.)
 """
 
-# ╔═╡ 32af5d7e-8c0a-11eb-1784-17984db6e6fc
-cnndm_train = nothing
+# ╔═╡ 44848686-8c0b-11eb-064c-7f56c697e69c
+md"""
+#### Training data
+Load article-summary pairs from the CNN / Daily Mail dataset's train split.
+We can get a fresh `Channel` (iterator) with training data each time we call `cnndm_train()`.
+"""
+
+# ╔═╡ d4b77c36-8c0b-11eb-3a32-b3fc1b7e80af
+md"""
+#### Validation data
+Get a `Channel` of article-summary pairs from the dataset's development/validation split.
+"""
+
+# ╔═╡ 95b154c8-8c0b-11eb-293f-f15c59a529e8
+md"""
+#### Test data
+Get a `Channel` of article-summary pairs from the dataset's test split.
+"""
 
 # ╔═╡ 6462ab2e-84e3-11eb-33dd-13e5000c78da
 md"Load preprocessed CNN/Dailymail data."
@@ -108,8 +124,16 @@ md"""
 # ╔═╡ a4f8ec0a-8c06-11eb-042e-290b3405e5e6
 md"""
 ## Pretrained BERT model
-We'll now load the pretrained BERT model.
+Load the pretrained BERT model from Google using Transformers.jl.
+We load the uncased BERT-base variant with 12 layers of hidden size 768.
+The model is also loaded internally with DataDeps.jl.
 """
+
+# ╔═╡ 0303fb1e-8c0c-11eb-28d1-1d9e631cb8af
+bert_model, wordpiece, tokenizer = pretrain"bert-uncased_L-12_H-768_A-12"
+
+# ╔═╡ 58ae6888-8c0c-11eb-359c-ed1a2cafbfde
+
 
 # ╔═╡ 3f4853dc-8c06-11eb-3a59-cdb9fc854879
 md"""
@@ -183,6 +207,24 @@ end;
 # ╔═╡ 2ca30702-8c08-11eb-31aa-b55c7ce561fb
 data = ingredients("data/datasets.jl");
 
+# ╔═╡ 32af5d7e-8c0a-11eb-1784-17984db6e6fc
+cnndm_train() = data.cnndm_loader(data.train_type)
+
+# ╔═╡ 0d56f78e-8c0b-11eb-3d74-218c28817970
+first(cnndm_train())
+
+# ╔═╡ 2a4a03e0-8c0b-11eb-0bea-2d96d67712fc
+cnndm_dev() = data.cnndm_loader(data.dev_type)
+
+# ╔═╡ 3a4f4ce4-8c0b-11eb-3518-0907e3d2a62d
+first(cnndm_dev())
+
+# ╔═╡ 1c697a62-8c0b-11eb-0814-0d02d802f6fc
+cnndm_test() = data.cnndm_loader(data.test_type)
+
+# ╔═╡ 395e445e-8c0b-11eb-0193-17ea21763de6
+first(cnndm_test())
+
 # ╔═╡ Cell order:
 # ╟─702d3820-84d9-11eb-1895-1d00242e5363
 # ╟─176ccb48-8c08-11eb-3068-3b684ff378b5
@@ -205,10 +247,20 @@ data = ingredients("data/datasets.jl");
 # ╟─98474e70-8c06-11eb-28c4-35bd54c8a558
 # ╟─2e4da306-85d6-11eb-0957-1182af2f9302
 # ╠═2ca30702-8c08-11eb-31aa-b55c7ce561fb
+# ╟─44848686-8c0b-11eb-064c-7f56c697e69c
 # ╠═32af5d7e-8c0a-11eb-1784-17984db6e6fc
+# ╠═0d56f78e-8c0b-11eb-3d74-218c28817970
+# ╟─d4b77c36-8c0b-11eb-3a32-b3fc1b7e80af
+# ╠═2a4a03e0-8c0b-11eb-0bea-2d96d67712fc
+# ╠═3a4f4ce4-8c0b-11eb-3518-0907e3d2a62d
+# ╟─95b154c8-8c0b-11eb-293f-f15c59a529e8
+# ╠═1c697a62-8c0b-11eb-0814-0d02d802f6fc
+# ╠═395e445e-8c0b-11eb-0193-17ea21763de6
 # ╟─6462ab2e-84e3-11eb-33dd-13e5000c78da
 # ╟─58544bfa-84d9-11eb-3426-b3b5cc2a19a8
 # ╟─a4f8ec0a-8c06-11eb-042e-290b3405e5e6
+# ╠═0303fb1e-8c0c-11eb-28d1-1d9e631cb8af
+# ╠═58ae6888-8c0c-11eb-359c-ed1a2cafbfde
 # ╟─3f4853dc-8c06-11eb-3a59-cdb9fc854879
 # ╠═619a2256-8c08-11eb-3544-2b20fba8a71d
 # ╟─4e3ead50-8c06-11eb-39ff-a3834ba819c2
