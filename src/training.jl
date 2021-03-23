@@ -3,7 +3,6 @@ using CUDA
 using GPUArrays:allowscalar
 using Flux
 using Flux:update!,reset!,onehot
-using Flux.Losses:logitcrossentropy
 using Transformers
 using Transformers.Basic
 using Transformers.Pretrain
