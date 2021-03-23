@@ -286,15 +286,6 @@ Here we define the training loop that is iterated over for at most $max_steps st
 # ╔═╡ 07e53e8e-8c13-11eb-1188-5309e353c56a
 snapshot_steps = if !DEBUG 2500 else 10 end
 
-# ╔═╡ 74917f70-8c13-11eb-3740-a7351fe64668
-md"""
-The actual training loop extracts tokens for each row's source and target text (original article vs. short summary).
-Then the loss between the model's predicted token probabilities and the ground truth probability is compared.
-The model is then updated with gradients for the encoder and gradients for decoder, embeddings, and generator.
-
-Losses are saved from every step and snapshots of the model and losses/optimizers for both parameter sets are saved in BSON format to the `./out` folder relative to the project root.
-"""
-
 # ╔═╡ be5c7b3c-8c16-11eb-1a3f-01eadf6bc1bb
 md"""
 Now train the model. Lean back and take a sip of coffee, as this takes a long while. ☕
@@ -305,11 +296,6 @@ _Pro tip: If you've already trained the model, just set `TRAIN = false` and the 
 # ╔═╡ 4e3ead50-8c06-11eb-39ff-a3834ba819c2
 md"""
 ## Evaluation
-"""
-
-# ╔═╡ d7e44134-8c06-11eb-150f-0b37210cff88
-md"""
-### Model selection
 """
 
 # ╔═╡ 97423bde-8c18-11eb-2b01-8526b32161d4
@@ -451,6 +437,16 @@ optimizer_decoder = optimizers.WarmupADAM(0.1, 10_000, (0.9, 0.99)) |> gpu
 # ╔═╡ 7723f3a2-8c14-11eb-30c1-fd7e9f7c8f57
 data_utils = ingredients("data/utils.jl");
 
+# ╔═╡ 74917f70-8c13-11eb-3740-a7351fe64668
+md"""
+The actual training loop extracts tokens for each row's source and target text (original article vs. short summary).
+Then the loss between the model's predicted token probabilities and the ground truth probability is compared.
+The model is then updated with gradients for the encoder and gradients for decoder, embeddings, and generator.
+
+Losses are saved from every step and snapshots of the model and losses/optimizers for both parameter sets are saved in BSON format to the output folder:
+$(data_utils.out_dir())
+"""
+
 # ╔═╡ b4dbc124-8c15-11eb-009d-7b3e0a26ba4d
 function save_snapshot(
 		time::DateTime,
@@ -520,6 +516,13 @@ end
 if TRAIN
 	train!(model)
 end
+
+# ╔═╡ d7e44134-8c06-11eb-150f-0b37210cff88
+md"""
+### Model selection
+At this point we've either trained the model from the previous sections or copied pretrained training snapshots to the output folder:
+$(data_utils.out_dir())
+"""
 
 # ╔═╡ Cell order:
 # ╟─702d3820-84d9-11eb-1895-1d00242e5363
