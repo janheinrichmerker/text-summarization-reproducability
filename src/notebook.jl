@@ -132,7 +132,25 @@ The model is also loaded internally with DataDeps.jl.
 # ╔═╡ 0303fb1e-8c0c-11eb-28d1-1d9e631cb8af
 bert_model, wordpiece, tokenizer = pretrain"bert-uncased_L-12_H-768_A-12"
 
+# ╔═╡ ff141dee-8c0c-11eb-35e3-c7a7fe623dc3
+md"""
+### Vocabulary
+When debugging, to keep the model trainable on smaller machines, limit the vocabulary to 100 words.
+"""
+
 # ╔═╡ 58ae6888-8c0c-11eb-359c-ed1a2cafbfde
+function load_vocabulary()::Vocabulary
+	if !DEBUG
+		Vocabulary(wordpiece) |> gpu
+	else
+		Vocabulary(wordpiece.vocab[1:100], wordpiece.vocab[100]) |> gpu
+	end
+end
+
+# ╔═╡ b1ac4c9e-8c0d-11eb-035a-4b075ffeb8f5
+vocabulary = load_vocabulary()
+
+# ╔═╡ eadeab8e-8c0d-11eb-34ee-77a32f6005ba
 
 
 # ╔═╡ 3f4853dc-8c06-11eb-3a59-cdb9fc854879
@@ -260,8 +278,11 @@ first(cnndm_test())
 # ╟─58544bfa-84d9-11eb-3426-b3b5cc2a19a8
 # ╟─a4f8ec0a-8c06-11eb-042e-290b3405e5e6
 # ╠═0303fb1e-8c0c-11eb-28d1-1d9e631cb8af
+# ╟─ff141dee-8c0c-11eb-35e3-c7a7fe623dc3
 # ╠═58ae6888-8c0c-11eb-359c-ed1a2cafbfde
-# ╟─3f4853dc-8c06-11eb-3a59-cdb9fc854879
+# ╠═b1ac4c9e-8c0d-11eb-035a-4b075ffeb8f5
+# ╠═eadeab8e-8c0d-11eb-34ee-77a32f6005ba
+# ╠═3f4853dc-8c06-11eb-3a59-cdb9fc854879
 # ╠═619a2256-8c08-11eb-3544-2b20fba8a71d
 # ╟─4e3ead50-8c06-11eb-39ff-a3834ba819c2
 # ╟─d7e44134-8c06-11eb-150f-0b37210cff88
