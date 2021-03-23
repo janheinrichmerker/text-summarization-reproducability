@@ -23,7 +23,7 @@ function (transformers::TransformersModel)(
     outputs::Vector{T}
 )::AbstractMatrix{<:AbstractFloat} where T
     # Encode inputs.
-    input_indices = vocabulary(inputs) |> todevice
+    input_indices = vocabulary(inputs) |> gpu
     if typeof(transformers.embed) <: CompositeEmbedding
         input_indices = (
             tok = input_indices,
@@ -34,7 +34,7 @@ function (transformers::TransformersModel)(
     encoded_embedding = transformers.encoder(input_embedding)
 
     # Decode outputs.
-    output_indices = vocabulary(outputs) |> todevice
+    output_indices = vocabulary(outputs) |> gpu
     if typeof(transformers.embed) <: CompositeEmbedding
         output_indices = (
             tok = output_indices,
