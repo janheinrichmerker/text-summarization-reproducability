@@ -336,21 +336,35 @@ custom_snapshot_steps = 2500
 # ╔═╡ bd5cde20-8c1d-11eb-25f4-c1d10590778a
 eval_snapshot_steps = TRAIN ? snapshot_steps : custom_snapshot_steps
 
+# ╔═╡ 216e718c-8c1c-11eb-066f-f705805cb70e
+md"""
+### Training loss
+Show loss on the training set at each iteration
+"""
+
+# ╔═╡ 16ccaf1a-8c2a-11eb-274a-5d8831732be1
+md"""
+### Best model selection
+Next, we'll select the best model by classification loss on the development/validation set.
+"""
+
 # ╔═╡ b3692f86-8c1b-11eb-3425-35027febcec0
 md"""
 #### Development data
 For evaluating loss on the development/validation set, we load its summary pairs.
-Loading and caching to the GPU might take a short momment.
-"""
-
-# ╔═╡ 216e718c-8c1c-11eb-066f-f705805cb70e
-md"""
-### Training loss
+Loading and caching to the GPU might take a short moment.
 """
 
 # ╔═╡ e2449708-8c06-11eb-0d09-991e4917b9d3
 md"""
 ### Automatic evaluation
+"""
+
+# ╔═╡ 26d83e30-8c28-11eb-3107-a3df1788bc2f
+md"""
+#### Test data
+For evaluating quality on the test set, we load its summary pairs.
+Loading and caching to the GPU might take a short moment.
 """
 
 # ╔═╡ a2ef84f2-8c07-11eb-0a94-21ebe1ed471a
@@ -423,6 +437,9 @@ cnndm_test() = data.cnndm_loader(data.test_type)
 # ╔═╡ 395e445e-8c0b-11eb-0193-17ea21763de6
 first(cnndm_test())
 
+# ╔═╡ 3e25c08a-8c28-11eb-143b-b996590c22d4
+test_summaries = collect(cnndm_test()) |> gpu
+
 # ╔═╡ 3c1128ce-8c0e-11eb-12e4-6d52c9d8c0ab
 models = ingredients("model/abstractive.jl");
 
@@ -461,6 +478,19 @@ function loss(
     prediction = translator.transformers(vocabulary, inputs, outputs)
     loss = losses.logtranslationloss(prediction, ground_truth, α=label_smoothing_α)
     return loss
+end
+
+# ╔═╡ 40f5d3de-8c2a-11eb-2e1b-d39b430a6550
+function dev_loss(translator::models.Translator; agg=mean)::AbstractFloat
+    losses = []
+    for summary ∈ dev_summaries
+        inputs = summary.source |> preprocess |> gpu
+        outputs = summary.target |> preprocess |> gpu
+        ground_truth = onehot(vocabulary, outputs) |> gpu
+        loss = loss(inputs, outputs, ground_truth, translator)
+        push!(losses, loss)
+    end
+    return agg(losses)
 end
 
 # ╔═╡ 5f6dc8c0-8c12-11eb-23c7-dd764f265dbd
@@ -568,7 +598,7 @@ end
 
 # ╔═╡ d7e44134-8c06-11eb-150f-0b37210cff88
 md"""
-### Model selection
+### Model loading
 At this point we've either trained the model from the previous sections or copied pretrained training snapshots to the output folder:
 $(data_utils.out_dir())
 """
@@ -596,6 +626,25 @@ else
 	"""
 end
 
+# ╔═╡ 7cb9dfd2-8c2a-11eb-27ac-811c01ba9368
+function find_best_model(;agg=mean)::models.Translator
+    best_loss = Inf
+    local best_model
+    for snapshot ∈ model_snapshots
+        @info "Load model snapshot $snapshot."
+        model = model_utils.load_model(snapshot)
+        loss = dev_loss(model, agg=agg)
+        if loss < best_loss
+            best_loss = loss
+            best_model = model
+        end
+    end
+    return best_model
+end
+
+# ╔═╡ c33a3092-8c2a-11eb-03c3-d74e98a3867c
+best_model = find_best_model()
+
 # ╔═╡ 9fcbdd2e-8c21-11eb-0e59-63649715d380
 eval_snapshot_file(name) = data_utils.snapshot_file(eval_start_time, max_step, name)
 
@@ -604,17 +653,17 @@ function plot_losses()
 	@load eval_snapshot_file("losses-encoder.bson") losses_encoder
 	@load eval_snapshot_file("losses-decoder.bson") losses_decoder
 	loss_plot = plot(
-		title = "Generator classification cross entropy loss",
-		xlabel = "Steps",
-		ylabel = "Loss",
+		title = "Generator classification loss",
+		xlabel = "steps",
+		ylabel = "cross entropy loss",
     	xticks = 0:eval_snapshot_steps:max_step,
 	)
-	plot!(loss_plot, losses_encoder, label="Encoder loss")
-	plot!(loss_plot, losses_decoder, label="Decoder loss")
+	plot!(loss_plot, losses_encoder, label="encoder")
+	plot!(loss_plot, losses_decoder, label="dcoder, embeddings, generator")
 	savefig(loss_plot, joinpath(data_utils.out_dir(), "training-loss.pdf"))
 	savefig(loss_plot, joinpath(data_utils.out_dir(), "training-loss.png"))
 	loss_plot
-end
+end;
 
 # ╔═╡ a39ba53e-8c22-11eb-04af-95d7d112f67d
 plot_losses()
@@ -717,12 +766,18 @@ plot_losses()
 # ╠═dc238b06-8c1d-11eb-3cf2-495db70ac90a
 # ╟─873bb7ca-8c1e-11eb-08f7-755484003009
 # ╠═9fcbdd2e-8c21-11eb-0e59-63649715d380
-# ╠═b3692f86-8c1b-11eb-3425-35027febcec0
-# ╠═97423bde-8c18-11eb-2b01-8526b32161d4
 # ╟─216e718c-8c1c-11eb-066f-f705805cb70e
 # ╠═7e4da548-8c22-11eb-1b3c-81269c4f5f5a
 # ╠═a39ba53e-8c22-11eb-04af-95d7d112f67d
+# ╟─16ccaf1a-8c2a-11eb-274a-5d8831732be1
+# ╟─b3692f86-8c1b-11eb-3425-35027febcec0
+# ╠═97423bde-8c18-11eb-2b01-8526b32161d4
+# ╠═40f5d3de-8c2a-11eb-2e1b-d39b430a6550
+# ╠═7cb9dfd2-8c2a-11eb-27ac-811c01ba9368
+# ╠═c33a3092-8c2a-11eb-03c3-d74e98a3867c
 # ╟─e2449708-8c06-11eb-0d09-991e4917b9d3
+# ╟─26d83e30-8c28-11eb-3107-a3df1788bc2f
+# ╠═3e25c08a-8c28-11eb-143b-b996590c22d4
 # ╟─a2ef84f2-8c07-11eb-0a94-21ebe1ed471a
 # ╟─f67d71ea-8c06-11eb-06a9-550a8d54c139
 # ╟─da824c02-85e4-11eb-37c4-552a37e00739

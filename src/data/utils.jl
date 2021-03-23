@@ -1,5 +1,4 @@
 using Dates
-using BSON: @load
 
 out_dir() = mkpath(normpath(joinpath(@__FILE__, "..", "..", "..", "out")))
 
