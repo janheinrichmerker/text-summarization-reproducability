@@ -1,6 +1,8 @@
 using DataDeps
 
 include("utils/download_utils.jl")
+include("loader.jl")
+include("model.jl")
 
 register(
     DataDep(
@@ -34,6 +36,16 @@ register(
     )
 )
 
+function xsum_loader(type::CorpusType)::Channel{SummaryPair}
+    return data_loader(
+        joinpath(
+            datadep"XSum-Preprocessed-BERT",
+            "bert_data_xsum_new"
+        ), 
+        type
+    )
+end
+
 register(
     DataDep(
         "CNN-Daily-Mail-Preprocessed-BERT",
@@ -65,3 +77,13 @@ register(
         post_fetch_method=unpack,
     )
 )
+
+function cnndm_loader(type::CorpusType)::Channel{SummaryPair}
+    return data_loader(
+        joinpath(
+            datadep"CNN-Daily-Mail-Preprocessed-BERT",
+            "bert_data_cnndm_final"
+        ), 
+        type
+    )
+end

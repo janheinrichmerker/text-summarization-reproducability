@@ -1,5 +1,4 @@
 @info "Load packages."
-using DataDeps
 using CUDA
 using GPUArrays:allowscalar
 using Flux
@@ -9,7 +8,6 @@ using Transformers
 using Transformers.Basic
 using Transformers.Pretrain
 using BSON: @save
-using Dates
 
 
 if CUDA.functional(true)
@@ -26,32 +24,24 @@ end
 
 
 @info "Load preprocessed data (CNN / Daily Mail)."
-include("data/datasets.jl")
-include("data/loader.jl")
 include("data/model.jl")
-function cnndm_loader(corpus_type::String)::Channel{SummaryPair}
-    data_dir = joinpath(
-        datadep"CNN-Daily-Mail-Preprocessed-BERT",
-        "bert_data_cnndm_final"
-    )
-    return data_loader(data_dir, corpus_type)
-end
+include("data/datasets.jl")
 
-cnndm_train = cnndm_loader("train")
+cnndm_train = cnndm_loader(train_type)
 # cnndm_test = cnndm_loader("test")
 # cnndm_valid = cnndm_loader("valid")
 
 
 @info "Load pretrained BERT model."
 bert_model, wordpiece, tokenizer = pretrain"bert-uncased_L-12_H-768_A-12"
-vocabulary = Vocabulary(wordpiece) |> todevice
-# vocabulary = Vocabulary(wordpiece.vocab[1:100], wordpiece.vocab[100]) |> todevice
+# vocabulary = Vocabulary(wordpiece) |> gpu
+vocabulary = Vocabulary(wordpiece.vocab[1:100], wordpiece.vocab[100]) |> gpu
 
 
 @info "Create summarization model from BERT model."
 include("model/abstractive.jl")
-model = BertAbs(bert_model, length(vocabulary)) |> todevice
-# model = TransformerAbsTiny(length(vocabulary)) |> todevice
+# model = BertAbs(bert_model, length(vocabulary)) |> gpu
+model = TransformerAbsTiny(length(vocabulary)) |> gpu
 @show model
 
 
@@ -76,8 +66,8 @@ end
 
 
 include("training/optimizers.jl")
-optimizer_encoder = WarmupADAM(2ℯ^(-3), 20_000, (0.9, 0.99))
-optimizer_decoder = WarmupADAM(0.1, 10_000, (0.9, 0.99))
+optimizer_encoder = WarmupADAM(2ℯ^(-3), 20_000, (0.9, 0.99)) |> gpu
+optimizer_decoder = WarmupADAM(0.1, 10_000, (0.9, 0.99)) |> gpu
 
 
 parameters_encoder = params(model.transformers.encoder)
@@ -88,22 +78,22 @@ parameters_decoder = params(
 )
 include("model/utils.jl")
 @info "Found $(params_count(parameters_encoder)) trainable parameters for encoder and $(params_count(parameters_decoder)) parameters for decoder, embeddings, and generator."
-out_path = mkpath(normpath(joinpath(@__FILE__, "..", "..", "out"))) # Create path for storing model snapshots.
 
 
 reset!(model)
 max_steps = 200_000
-# snapshot_steps = 1
-snapshot_steps = 2500
+# snapshot_steps = 2500
+snapshot_steps = 1
 losses_encoder = []
 losses_decoder = []
 start_time = now()
+include("data/utils.jl")
 for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
 
-    inputs = summary.source |> preprocess |> todevice
-    outputs = summary.target |> preprocess |> todevice
-    ground_truth = onehot(vocabulary, outputs) |> todevice
+    inputs = summary.source |> preprocess |> gpu
+    outputs = summary.target |> preprocess |> gpu
+    ground_truth = onehot(vocabulary, outputs) |> gpu
 
 
     @info "Train encoder."
@@ -129,12 +119,11 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
 
     if step % snapshot_steps == 0
         @info "Save model snapshot."
-        snapshot_name = "bert-abs-$(Dates.format(start_time, "yyyy-mm-dd-HH:MM"))-step-$(string(step, pad=6))"
-        @save joinpath(out_path, "$snapshot_name-model.bson") model
-        @save joinpath(out_path, "$snapshot_name-optimizer-encoder.bson") optimizer_encoder
-        @save joinpath(out_path, "$snapshot_name-optimizer-decoder.bson") optimizer_decoder
-        @save joinpath(out_path, "$snapshot_name-losses-encoder.bson") losses_encoder
-        @save joinpath(out_path, "$snapshot_name-losses-decoder.bson") losses_decoder
+        @save snapshot_file(start_time, step, "model.bson") model |> cpu
+        @save snapshot_file(start_time, step, "optimizer-encoder.bson") optimizer_encoder |> cpu
+        @save snapshot_file(start_time, step, "optimizer-decoder.bson") optimizer_decoder |> cpu
+        @save snapshot_file(start_time, step, "losses-encoder.bson") losses_encoder
+        @save snapshot_file(start_time, step, "losses-decoder.bson") losses_decoder
         # Evaluate on validation set.
     end
 end

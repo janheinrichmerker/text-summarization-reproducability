@@ -28,19 +28,18 @@ function data_loader(paths::Array{String})::Channel{SummaryPair}
 end
 
 # Check if the file is of the given corpus type.
-function is_corpus_type(path::String, corpus_type::String)
-	@assert corpus_type ∈ ["train", "valid", "test"]
-	isfile(path) && occursin(corpus_type, basename(path))
+function is_corpus_type(path::String, type::CorpusType)
+	isfile(path) && occursin(corpus_type_name(type), basename(path))
 end
 
-function filter_corpus_type!(paths::Array{String}, corpus_type::String)
-    filter!(path -> is_corpus_type(path, corpus_type), paths)
+function filter_corpus_type!(paths::Array{String}, type::CorpusType)
+    filter!(path -> is_corpus_type(path, type), paths)
 end
 
 # Create an iterator for rows of the preprocessed training/test/validation data.
-function data_loader(path::String, corpus_type::String)::Channel{SummaryPair}
+function data_loader(path::String, type::CorpusType)::Channel{SummaryPair}
 	paths = readdir(path, join=true, sort=true)
-	filter_corpus_type!(paths, corpus_type)
+	filter_corpus_type!(paths, type)
 
 	return Channel{SummaryPair}() do channel
 		loader = data_loader(paths)
