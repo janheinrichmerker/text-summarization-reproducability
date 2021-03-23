@@ -28,6 +28,15 @@ using Transformers.Pretrain
 # ╔═╡ 98c4351e-8c08-11eb-14fe-7df792e4b7cf
 using BSON: @save, @load
 
+# ╔═╡ 44df9b3a-8c16-11eb-17a7-3d6038911fc5
+using Dates
+
+# ╔═╡ 2ed19a74-8c18-11eb-0c06-95c930bbc8c1
+using Statistics
+
+# ╔═╡ 30edfac8-8c18-11eb-1d59-a5042a177b20
+using Plots
+
 # ╔═╡ 38f9317a-84e2-11eb-117b-9f62916abd75
 using DataDeps
 
@@ -43,11 +52,22 @@ md"""
 ## Setup
 """
 
-# ╔═╡ f2ef12a6-8c09-11eb-10ae-0177f2691fdf
-DEBUG=true
+# ╔═╡ 400c92b8-8c17-11eb-170d-1f6b3fe06a43
+md"""
+Should we train the model before evaluating?
+Keep in mind that training requires a lot of hardware resources and takes a long while! See the _Training loop_ section for more details.
+"""
 
 # ╔═╡ 1c81ceec-8c0f-11eb-1f30-cbd6c62cf00f
-TRAIN=false
+TRAIN = false
+
+# ╔═╡ 6847039e-8c17-11eb-15b9-e70a268a56fb
+md"""
+If this toggle is set to `true`, we'll drastically over-simplify the model and data so that you should be able to train a tiny variant of the actual model on your own machine. See the _Model_ section for more details.
+"""
+
+# ╔═╡ f2ef12a6-8c09-11eb-10ae-0177f2691fdf
+DEBUG = true
 
 # ╔═╡ 3351b1ca-8c08-11eb-14c3-8f61900721f4
 md"""
@@ -58,6 +78,9 @@ md"""
 md"""
 ### Setup GPU with CUDA
 """
+
+# ╔═╡ 5ddb607a-8c18-11eb-0a32-45ae68933430
+
 
 # ╔═╡ 2646eafe-8c08-11eb-2a25-c338673a3d2a
 if CUDA.functional(true)
@@ -70,6 +93,14 @@ else
     Flux.use_cuda[] = false
     enable_gpu(false)
 end
+
+# ╔═╡ 39e1ae40-8c18-11eb-3f12-b566f7f516e2
+md"""
+### Setup plots
+"""
+
+# ╔═╡ 48c4e332-8c18-11eb-05c8-f15576c14fcb
+gd()
 
 # ╔═╡ 22e29d1a-84e2-11eb-3e35-f7050cfd6cc4
 md"""
@@ -253,6 +284,13 @@ The model is then updated with gradients for the encoder and gradients for decod
 Losses are saved from every step and snapshots of the model and losses/optimizers for both parameter sets are saved in BSON format to the `./out` folder relative to the project root.
 """
 
+# ╔═╡ be5c7b3c-8c16-11eb-1a3f-01eadf6bc1bb
+md"""
+Now train the model. Lean back and take a sip of coffee, as this takes a long while. ☕
+
+_Pro tip: If you've already trained the model, just set `TRAIN = false` and the evaluation will continue without training the model first._
+"""
+
 # ╔═╡ 4e3ead50-8c06-11eb-39ff-a3834ba819c2
 md"""
 ## Evaluation
@@ -262,6 +300,9 @@ md"""
 md"""
 ### Model selection
 """
+
+# ╔═╡ 97423bde-8c18-11eb-2b01-8526b32161d4
+
 
 # ╔═╡ e2449708-8c06-11eb-0d09-991e4917b9d3
 md"""
@@ -360,10 +401,6 @@ parameters_decoder = params(
     model.transformers.generator
 )
 
-# ╔═╡ 3f117812-8c13-11eb-3b34-3988290737a7
-function train!(model::models.Translator)
-end
-
 # ╔═╡ a8bcd180-8c10-11eb-17fc-5f3dc5f516f8
 losses = ingredients("training/loss.jl");
 
@@ -403,11 +440,83 @@ optimizer_decoder = optimizers.WarmupADAM(0.1, 10_000, (0.9, 0.99)) |> gpu
 # ╔═╡ 7723f3a2-8c14-11eb-30c1-fd7e9f7c8f57
 data_utils = ingredients("data/utils.jl");
 
+# ╔═╡ b4dbc124-8c15-11eb-009d-7b3e0a26ba4d
+function save_snapshot(
+		time::DateTime,
+		step::Int,
+		model::models.Translator,
+		optimizer_encoder::optimizers.WarmupADAM,
+		optimizer_decoder::optimizers.WarmupADAM,
+		losses_encoder::AbstractVector{<:AbstractFloat},
+		losses_decoder::AbstractVector{<:AbstractFloat})
+	@info "Save model snapshot."
+	snapfile(time, step, name) = data_utils.snapshot_file(time, step, name)
+	@save snapfile(time, step, "model.bson") model
+	@save snapfile(time, step, "optimizer-encoder.bson") optimizer_encoder
+	@save snapfile(time, step, "optimizer-decoder.bson") optimizer_decoder
+	@save snapfile(time, step, "losses-encoder.bson") losses_encoder
+	@save snapfile(time, step, "losses-decoder.bson") losses_decoder
+end
+
+# ╔═╡ 3f117812-8c13-11eb-3b34-3988290737a7
+function train!(model::models.Translator)
+	losses_encoder = []
+	losses_decoder = []
+	start_time = now()
+	
+	for (step, summary) ∈ zip(1:max_steps, cnndm_train)
+   		@info "Training step $step/$max_steps."
+		inputs = summary.source |> preprocess |> gpu
+		outputs = summary.target |> preprocess |> gpu
+		ground_truth = onehot(vocabulary, outputs) |> gpu
+		
+		
+		@info "Train encoder."
+		local loss_encoder
+		gradients_encoder = gradient(parameters_encoder) do
+			loss_encoder = loss(inputs, outputs, ground_truth)
+			return loss_encoder
+		end
+		push!(losses_encoder, loss_encoder)
+		@info "Updating encoder parameters." loss_encoder
+		update!(optimizer_encoder, parameters_encoder, gradients_encoder)
+
+		
+		@info "Train decoder, embeddings, and generator."
+		local loss_decoder
+		gradients_decoder = gradient(parameters_decoder) do
+			loss_decoder = loss(inputs, outputs, ground_truth)
+			return loss_decoder
+		end
+		push!(losses_decoder, loss_decoder)
+		@info "Updating decoder, embeddings, and generator parameters." loss_decoder
+		update!(optimizer_decoder, parameters_decoder, gradients_decoder)
+		
+		
+		if step % snapshot_steps == 0
+			save_snapshot(
+				model |> cpu,
+				optimizer_encoder |> cpu,
+				optimizer_decoder |> cpu,
+				losses_encoder,
+				losses_decoder,
+			)
+		end
+	end
+end
+
+# ╔═╡ ded97e7a-8c16-11eb-2b04-23a5dec4405e
+if TRAIN
+	train!(model)
+end
+
 # ╔═╡ Cell order:
 # ╟─702d3820-84d9-11eb-1895-1d00242e5363
 # ╟─176ccb48-8c08-11eb-3068-3b684ff378b5
-# ╠═f2ef12a6-8c09-11eb-10ae-0177f2691fdf
+# ╟─400c92b8-8c17-11eb-170d-1f6b3fe06a43
 # ╠═1c81ceec-8c0f-11eb-1f30-cbd6c62cf00f
+# ╟─6847039e-8c17-11eb-15b9-e70a268a56fb
+# ╠═f2ef12a6-8c09-11eb-10ae-0177f2691fdf
 # ╟─3351b1ca-8c08-11eb-14c3-8f61900721f4
 # ╠═2f26e06e-8c08-11eb-18c0-2f8e5b0cf47a
 # ╠═590fdac2-8c08-11eb-1c42-93ff500817c1
@@ -417,8 +526,14 @@ data_utils = ingredients("data/utils.jl");
 # ╠═92baa6f8-8c08-11eb-3321-233e7bf14afe
 # ╠═95f72c2e-8c08-11eb-2e18-0b166f648de6
 # ╠═98c4351e-8c08-11eb-14fe-7df792e4b7cf
+# ╠═44df9b3a-8c16-11eb-17a7-3d6038911fc5
+# ╠═2ed19a74-8c18-11eb-0c06-95c930bbc8c1
+# ╠═30edfac8-8c18-11eb-1d59-a5042a177b20
 # ╟─1be31330-8c08-11eb-296f-6f5df8bf6e41
+# ╠═5ddb607a-8c18-11eb-0a32-45ae68933430
 # ╠═2646eafe-8c08-11eb-2a25-c338673a3d2a
+# ╟─39e1ae40-8c18-11eb-3f12-b566f7f516e2
+# ╠═48c4e332-8c18-11eb-05c8-f15576c14fcb
 # ╟─22e29d1a-84e2-11eb-3e35-f7050cfd6cc4
 # ╠═38f9317a-84e2-11eb-117b-9f62916abd75
 # ╠═0d86a904-84e3-11eb-1c0c-9d37637c8420
@@ -474,8 +589,12 @@ data_utils = ingredients("data/utils.jl");
 # ╟─74917f70-8c13-11eb-3740-a7351fe64668
 # ╠═7723f3a2-8c14-11eb-30c1-fd7e9f7c8f57
 # ╠═3f117812-8c13-11eb-3b34-3988290737a7
+# ╠═b4dbc124-8c15-11eb-009d-7b3e0a26ba4d
+# ╟─be5c7b3c-8c16-11eb-1a3f-01eadf6bc1bb
+# ╠═ded97e7a-8c16-11eb-2b04-23a5dec4405e
 # ╟─4e3ead50-8c06-11eb-39ff-a3834ba819c2
 # ╟─d7e44134-8c06-11eb-150f-0b37210cff88
+# ╠═97423bde-8c18-11eb-2b01-8526b32161d4
 # ╟─e2449708-8c06-11eb-0d09-991e4917b9d3
 # ╟─a2ef84f2-8c07-11eb-0a94-21ebe1ed471a
 # ╟─f67d71ea-8c06-11eb-06a9-550a8d54c139
