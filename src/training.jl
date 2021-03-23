@@ -12,11 +12,17 @@ using BSON: @save
 using Dates
 
 
-if !CUDA.functional(true)
+if CUDA.functional(true)
+    # CUDA.device!(1)
+    allowscalar(false)
+    Flux.use_cuda[] = true
+    enable_gpu(true)
+else
     @warn "You're training the model without GPU support."
+    Flux.use_cuda[] = false
+    enable_gpu(false)
 end
-enable_gpu(true)
-allowscalar(false)
+
 
 
 @info "Load preprocessed data (CNN / Daily Mail)."
