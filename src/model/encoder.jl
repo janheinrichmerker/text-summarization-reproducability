@@ -2,7 +2,7 @@ using Flux
 using Transformers.Basic
 
 struct Encoder
-    layers::Array{<:Transformer} 
+    layers::Array{Transformer} 
 end
 
 Flux.@functor Encoder

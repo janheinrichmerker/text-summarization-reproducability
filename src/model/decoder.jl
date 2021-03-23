@@ -2,7 +2,7 @@ using Flux
 using Transformers.Basic
 
 struct Decoder
-    layers::Array{<:TransformerDecoder}
+    layers::Array{TransformerDecoder}
 end
 
 Flux.@functor Decoder
