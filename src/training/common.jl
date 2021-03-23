@@ -1,4 +1,3 @@
-using Base:AbstractVector,AbstractMatrix
 using Transformers.Basic
 using Transformers.BidirectionalEncoder:WordPiece
 
