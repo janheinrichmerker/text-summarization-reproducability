@@ -37,6 +37,9 @@ using Statistics
 # ╔═╡ 30edfac8-8c18-11eb-1d59-a5042a177b20
 using Plots
 
+# ╔═╡ 923f88c6-8c24-11eb-0642-c1384a9262db
+using Plots: plot, savefig
+
 # ╔═╡ 7442b326-8c19-11eb-3860-c5b115806a4e
 using GR
 
@@ -112,6 +115,9 @@ md"""
 
 # ╔═╡ 48c4e332-8c18-11eb-05c8-f15576c14fcb
 gr()
+
+# ╔═╡ 493f6f90-8c26-11eb-0627-fb59af397184
+theme(:vibrant)
 
 # ╔═╡ 22e29d1a-84e2-11eb-3e35-f7050cfd6cc4
 md"""
@@ -236,16 +242,17 @@ md"""
 
 # ╔═╡ 5144a378-8c0f-11eb-3b32-6f7661781a0a
 md"""
-Label smoothing factor α tom apply to the one-hot ground-truth labels when calculating the model loss.
+Label smoothing factor $\alpha$ to apply to the one-hot ground-truth labels when calculating the model loss.
 """
 
 # ╔═╡ 619a2256-8c08-11eb-3544-2b20fba8a71d
-label_smoothing_α = 0.0 # Label smoothing doesn't work yet.
+# FIXME Label smoothing doesn't work yet.
+label_smoothing_α = 0.0
 
 # ╔═╡ c8cf0d90-8c0f-11eb-3a11-4bded8f5be4f
 md"""
 Calculate the model loss for given input, output, and ground truth token probabilities.
-If α is non-zero return Kullback-Leibler divergence between the model's predictions and smoothed ground truth labels. Otherwise cross entropy between predictions and unsmoothed ground truth.
+If $\alpha > 0$, return Kullback-Leibler divergence between the model's predictions and smoothed ground truth labels. Otherwise cross entropy between predictions and unsmoothed ground truth.
 """
 
 # ╔═╡ a46bcb12-8c11-11eb-0493-1505139bb2bf
@@ -258,24 +265,24 @@ This accounts for the former being pretrained while the latter have to be learne
 # ╔═╡ bf061ff0-8c10-11eb-108d-cf008ae94342
 md"""
 ### Optimizers
-We use ADAM optimizers with a custom warmup schedule for the learning rate η.
+We use ADAM optimizers with a custom warmup schedule for the learning rate $\eta$.
 The model's encoder is optimized slower, because it has already bee pretrained.
 """
 
 # ╔═╡ 486cc03c-8c11-11eb-03cb-bb640ac822f5
 md"""
 Encoder schedule:
-η = 2ℯ^(-3) * min(step^(-0.5), step * 20000)
+$\eta = 2\mathcal{e}^{-3} \cdot \min(\text{step}^{-0.5},\ \text{step} \cdot 20\,000)$
 """
 
 # ╔═╡ 940c2c58-8c11-11eb-39b6-cf4dc61bd550
 md"""
 Decoder schedule:
-η = 0.1 * min(step^(-0.5), step * 10000)
+$\eta = 0.1 \cdot \min(\text{step}^{-0.5},\ \text{step} \cdot 10\,000)$
 """
 
 # ╔═╡ 03a78c44-8c13-11eb-27da-e11097968bc7
-max_steps = if !DEBUG 200_000 else 10 end
+max_steps = !DEBUG ? 200_000 : 10
 
 # ╔═╡ d32d3994-8c12-11eb-1848-d9bd515709a5
 md"""
@@ -284,7 +291,10 @@ Here we define the training loop that is iterated over for at most $max_steps st
 """
 
 # ╔═╡ 07e53e8e-8c13-11eb-1188-5309e353c56a
-snapshot_steps = if !DEBUG 2500 else 10 end
+snapshot_steps = !DEBUG ? 2500 : 10
+
+# ╔═╡ 79b63cd0-8c1c-11eb-3b31-1395f64e979d
+start_time = now()
 
 # ╔═╡ be5c7b3c-8c16-11eb-1a3f-01eadf6bc1bb
 md"""
@@ -298,8 +308,45 @@ md"""
 ## Evaluation
 """
 
-# ╔═╡ 97423bde-8c18-11eb-2b01-8526b32161d4
+# ╔═╡ 35878a0a-8c1c-11eb-0e18-d1964db60a67
+md"""
+### Configuration
+Define the training run we want to evaluate.
+"""
 
+# ╔═╡ 9bcff242-8c1d-11eb-007f-6b3ae5b2ef6a
+md"""
+When did the chosen model start training?
+"""
+
+# ╔═╡ 546c963e-8c1c-11eb-0762-cbecc179fdf0
+custom_start_time = DateTime(2021, 03, 22, 17, 50)
+
+# ╔═╡ 655f933a-8c1c-11eb-1fb0-636b021637b6
+eval_start_time = TRAIN ? start_time : custom_start_time
+
+# ╔═╡ 16441198-8c1e-11eb-05af-99619660cdd8
+md"""
+What was the rate at which snapshots were saved for that model?
+"""
+
+# ╔═╡ 87ceb29c-8c1d-11eb-2534-39649a087b4f
+custom_snapshot_steps = 2500
+
+# ╔═╡ bd5cde20-8c1d-11eb-25f4-c1d10590778a
+eval_snapshot_steps = TRAIN ? snapshot_steps : custom_snapshot_steps
+
+# ╔═╡ b3692f86-8c1b-11eb-3425-35027febcec0
+md"""
+#### Development data
+For evaluating loss on the development/validation set, we load its summary pairs.
+Loading and caching to the GPU might take a short momment.
+"""
+
+# ╔═╡ 216e718c-8c1c-11eb-066f-f705805cb70e
+md"""
+### Training loss
+"""
 
 # ╔═╡ e2449708-8c06-11eb-0d09-991e4917b9d3
 md"""
@@ -366,6 +413,9 @@ cnndm_dev() = data.cnndm_loader(data.dev_type)
 
 # ╔═╡ 3a4f4ce4-8c0b-11eb-3518-0907e3d2a62d
 first(cnndm_dev())
+
+# ╔═╡ 97423bde-8c18-11eb-2b01-8526b32161d4
+dev_summaries = collect(cnndm_dev()) |> gpu
 
 # ╔═╡ 1c697a62-8c0b-11eb-0814-0d02d802f6fc
 cnndm_test() = data.cnndm_loader(data.test_type)
@@ -469,7 +519,6 @@ end
 function train!(model::models.Translator)
 	losses_encoder = []
 	losses_decoder = []
-	start_time = now()
 	
 	for (step, summary) ∈ zip(1:max_steps, cnndm_train)
    		@info "Training step $step/$max_steps."
@@ -524,6 +573,52 @@ At this point we've either trained the model from the previous sections or copie
 $(data_utils.out_dir())
 """
 
+# ╔═╡ dc238b06-8c1d-11eb-3cf2-495db70ac90a
+model_snapshots, max_step = data_utils.snapshot_files(
+	eval_start_time,
+	eval_snapshot_steps,
+	"model.bson"
+)
+
+# ╔═╡ 873bb7ca-8c1e-11eb-08f7-755484003009
+if isempty(model_snapshots)
+	md"""
+	**⚠️ Could not find any model snapshot for training 
+	started at $(Dates.format(eval_start_time, "yyyy-mm-dd (at HH:MM)")) 
+	with snapshotting every $eval_snapshot_steps steps.**
+	"""
+else
+	md"""
+	Found $(length(model_snapshots)) snapshots for training 
+	started at $(Dates.format(eval_start_time, "yyyy-mm-dd (at HH:MM)"))  
+	with snapshotting every $eval_snapshot_steps steps.
+	The last snapshot is from step $max_step.
+	"""
+end
+
+# ╔═╡ 9fcbdd2e-8c21-11eb-0e59-63649715d380
+eval_snapshot_file(name) = data_utils.snapshot_file(eval_start_time, max_step, name)
+
+# ╔═╡ 7e4da548-8c22-11eb-1b3c-81269c4f5f5a
+function plot_losses()
+	@load eval_snapshot_file("losses-encoder.bson") losses_encoder
+	@load eval_snapshot_file("losses-decoder.bson") losses_decoder
+	loss_plot = plot(
+		title = "Generator classification cross entropy loss",
+		xlabel = "Steps",
+		ylabel = "Loss",
+    	xticks = 0:eval_snapshot_steps:max_step,
+	)
+	plot!(loss_plot, losses_encoder, label="Encoder loss")
+	plot!(loss_plot, losses_decoder, label="Decoder loss")
+	savefig(loss_plot, joinpath(data_utils.out_dir(), "training-loss.pdf"))
+	savefig(loss_plot, joinpath(data_utils.out_dir(), "training-loss.png"))
+	loss_plot
+end
+
+# ╔═╡ a39ba53e-8c22-11eb-04af-95d7d112f67d
+plot_losses()
+
 # ╔═╡ Cell order:
 # ╟─702d3820-84d9-11eb-1895-1d00242e5363
 # ╟─176ccb48-8c08-11eb-3068-3b684ff378b5
@@ -543,12 +638,14 @@ $(data_utils.out_dir())
 # ╠═44df9b3a-8c16-11eb-17a7-3d6038911fc5
 # ╠═2ed19a74-8c18-11eb-0c06-95c930bbc8c1
 # ╠═30edfac8-8c18-11eb-1d59-a5042a177b20
+# ╠═923f88c6-8c24-11eb-0642-c1384a9262db
 # ╠═7442b326-8c19-11eb-3860-c5b115806a4e
 # ╟─1be31330-8c08-11eb-296f-6f5df8bf6e41
 # ╠═2646eafe-8c08-11eb-2a25-c338673a3d2a
 # ╟─dbc654f4-8c18-11eb-059e-f91749357883
 # ╟─39e1ae40-8c18-11eb-3f12-b566f7f516e2
 # ╠═48c4e332-8c18-11eb-05c8-f15576c14fcb
+# ╠═493f6f90-8c26-11eb-0627-fb59af397184
 # ╟─22e29d1a-84e2-11eb-3e35-f7050cfd6cc4
 # ╠═38f9317a-84e2-11eb-117b-9f62916abd75
 # ╠═0d86a904-84e3-11eb-1c0c-9d37637c8420
@@ -603,13 +700,28 @@ $(data_utils.out_dir())
 # ╠═07e53e8e-8c13-11eb-1188-5309e353c56a
 # ╟─74917f70-8c13-11eb-3740-a7351fe64668
 # ╠═7723f3a2-8c14-11eb-30c1-fd7e9f7c8f57
+# ╠═79b63cd0-8c1c-11eb-3b31-1395f64e979d
 # ╠═3f117812-8c13-11eb-3b34-3988290737a7
 # ╠═b4dbc124-8c15-11eb-009d-7b3e0a26ba4d
 # ╟─be5c7b3c-8c16-11eb-1a3f-01eadf6bc1bb
 # ╠═ded97e7a-8c16-11eb-2b04-23a5dec4405e
 # ╟─4e3ead50-8c06-11eb-39ff-a3834ba819c2
+# ╟─35878a0a-8c1c-11eb-0e18-d1964db60a67
+# ╟─9bcff242-8c1d-11eb-007f-6b3ae5b2ef6a
+# ╠═546c963e-8c1c-11eb-0762-cbecc179fdf0
+# ╠═655f933a-8c1c-11eb-1fb0-636b021637b6
+# ╟─16441198-8c1e-11eb-05af-99619660cdd8
+# ╠═87ceb29c-8c1d-11eb-2534-39649a087b4f
+# ╠═bd5cde20-8c1d-11eb-25f4-c1d10590778a
 # ╟─d7e44134-8c06-11eb-150f-0b37210cff88
+# ╠═dc238b06-8c1d-11eb-3cf2-495db70ac90a
+# ╟─873bb7ca-8c1e-11eb-08f7-755484003009
+# ╠═9fcbdd2e-8c21-11eb-0e59-63649715d380
+# ╠═b3692f86-8c1b-11eb-3425-35027febcec0
 # ╠═97423bde-8c18-11eb-2b01-8526b32161d4
+# ╟─216e718c-8c1c-11eb-066f-f705805cb70e
+# ╠═7e4da548-8c22-11eb-1b3c-81269c4f5f5a
+# ╠═a39ba53e-8c22-11eb-04af-95d7d112f67d
 # ╟─e2449708-8c06-11eb-0d09-991e4917b9d3
 # ╟─a2ef84f2-8c07-11eb-0a94-21ebe1ed471a
 # ╟─f67d71ea-8c06-11eb-06a9-550a8d54c139
