@@ -37,6 +37,9 @@ using Statistics
 # ╔═╡ 30edfac8-8c18-11eb-1d59-a5042a177b20
 using Plots
 
+# ╔═╡ 7442b326-8c19-11eb-3860-c5b115806a4e
+using GR
+
 # ╔═╡ 38f9317a-84e2-11eb-117b-9f62916abd75
 using DataDeps
 
@@ -79,9 +82,6 @@ md"""
 ### Setup GPU with CUDA
 """
 
-# ╔═╡ 5ddb607a-8c18-11eb-0a32-45ae68933430
-
-
 # ╔═╡ 2646eafe-8c08-11eb-2a25-c338673a3d2a
 if CUDA.functional(true)
     # CUDA.device!(1)
@@ -89,9 +89,20 @@ if CUDA.functional(true)
     Flux.use_cuda[] = true
     enable_gpu(true)
 else
-    @warn "You're training the model without GPU support."
     Flux.use_cuda[] = false
     enable_gpu(false)
+end;
+
+# ╔═╡ dbc654f4-8c18-11eb-059e-f91749357883
+if CUDA.functional(true)
+    md"Alright, you're running in GPU-accellerated mode using CUDA."
+else
+    md"""
+	**⚠️ You're running the notebook without GPU support.**
+	
+	It is likely that you won't be able to train our model.
+	At least try setting `DEBUG = true`, better yet skip training with `TRAIN = false` and use pretrained model snapshots
+	"""
 end
 
 # ╔═╡ 39e1ae40-8c18-11eb-3f12-b566f7f516e2
@@ -100,7 +111,7 @@ md"""
 """
 
 # ╔═╡ 48c4e332-8c18-11eb-05c8-f15576c14fcb
-gd()
+gr()
 
 # ╔═╡ 22e29d1a-84e2-11eb-3e35-f7050cfd6cc4
 md"""
@@ -529,9 +540,10 @@ end
 # ╠═44df9b3a-8c16-11eb-17a7-3d6038911fc5
 # ╠═2ed19a74-8c18-11eb-0c06-95c930bbc8c1
 # ╠═30edfac8-8c18-11eb-1d59-a5042a177b20
+# ╠═7442b326-8c19-11eb-3860-c5b115806a4e
 # ╟─1be31330-8c08-11eb-296f-6f5df8bf6e41
-# ╠═5ddb607a-8c18-11eb-0a32-45ae68933430
 # ╠═2646eafe-8c08-11eb-2a25-c338673a3d2a
+# ╟─dbc654f4-8c18-11eb-059e-f91749357883
 # ╟─39e1ae40-8c18-11eb-3f12-b566f7f516e2
 # ╠═48c4e332-8c18-11eb-05c8-f15576c14fcb
 # ╟─22e29d1a-84e2-11eb-3e35-f7050cfd6cc4
