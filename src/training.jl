@@ -82,23 +82,23 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
 
     @info "Train encoder."
     local loss_encoder
-    @timed gradients_encoder = gradient(parameters_encoder) do
+    gradients_encoder = gradient(parameters_encoder) do
         loss_encoder = loss(inputs, outputs, ground_truth)
         return loss_encoder
     end
     push!(losses_encoder, loss_encoder)
     @info "Updating encoder parameters." loss_encoder
-    @timed update!(optimizer_encoder, parameters_encoder, gradients_encoder)
+    update!(optimizer_encoder, parameters_encoder, gradients_encoder)
 
     @info "Train decoder, embeddings, and generator."
     local loss_decoder
-    @timed gradients_decoder = gradient(parameters_decoder) do
+    gradients_decoder = gradient(parameters_decoder) do
         loss_decoder = loss(inputs, outputs, ground_truth)
         return loss_decoder
     end
     push!(losses_decoder, loss_decoder)
     @info "Updating decoder, embeddings, and generator parameters." loss_decoder
-    @timed update!(optimizer_decoder, parameters_decoder, gradients_decoder)
+    update!(optimizer_decoder, parameters_decoder, gradients_decoder)
 
 
     if step % snapshot_steps == 0
@@ -108,6 +108,5 @@ for (step, summary) ∈ zip(1:max_steps, cnndm_train)
         @save snapshot_file(start_time, step, "optimizer-decoder.bson") optimizer_decoder |> cpu
         @save snapshot_file(start_time, step, "losses-encoder.bson") losses_encoder
         @save snapshot_file(start_time, step, "losses-decoder.bson") losses_decoder
-        # Evaluate on validation set.
     end
 end
