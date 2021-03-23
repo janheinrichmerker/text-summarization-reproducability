@@ -7,7 +7,7 @@ using Flux.Losses:logitcrossentropy
 using Transformers
 using Transformers.Basic
 using Transformers.Pretrain
-using BSON: @save
+using BSON:@save
 
 
 if CUDA.functional(true)
@@ -45,24 +45,9 @@ model = TransformerAbsTiny(length(vocabulary)) |> gpu
 @show model
 
 
-function preprocess(text::String)::AbstractVector{String}
-    tokens = text |> tokenizer |> wordpiece
-    max_length = min(4096, length(tokens)) # Truncate to 4096 tokens
-    tokens = tokens[1:max_length]
-    return ["[CLS]"; tokens; "[SEP]"]
-end
-
-include("training/loss.jl")
-label_smoothing_α = 0.0 # Label smoothing doesn't work yet.
-function loss(
-    inputs::AbstractVector{String},
-    outputs::AbstractVector{String},
-    ground_truth::AbstractMatrix{<:Number}
-)::AbstractFloat
-    prediction = model.transformers(vocabulary, inputs, outputs)
-    loss = logtranslationloss(prediction, ground_truth, α=label_smoothing_α)
-    return loss
-end
+include("training/common.jl")
+preprocess(text) = preprocess(text, wordpiece, tokenizer)
+loss(inputs, outputs, ground_truth) = loss(inputs, outputs, ground_truth, model, vocabulary)
 
 
 include("training/optimizers.jl")
