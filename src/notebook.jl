@@ -206,10 +206,18 @@ Calculate the model loss for given input, output, and ground truth token probabi
 If α is non-zero return Kullback-Leibler divergence between the model's predictions and smoothed ground truth labels. Otherwise cross entropy between predictions and unsmoothed ground truth.
 """
 
+# ╔═╡ a46bcb12-8c11-11eb-0493-1505139bb2bf
+md"""
+### Model parameters
+Parameters are separated for the encoder and the rest of the model (i.e., embeddings, decoder, and generator).
+This accounts for the former being pretrained while the latter have to be learned from scratch.
+"""
+
 # ╔═╡ bf061ff0-8c10-11eb-108d-cf008ae94342
 md"""
 ### Optimizers
 We use ADAM optimizers with a custom warmup schedule for the learning rate η.
+The model's encoder is optimized slower, because it has already bee pretrained.
 """
 
 # ╔═╡ 486cc03c-8c11-11eb-03cb-bb640ac822f5
@@ -224,8 +232,26 @@ Decoder schedule:
 η = 0.1 * min(step^(-0.5), step * 10000)
 """
 
-# ╔═╡ a46bcb12-8c11-11eb-0493-1505139bb2bf
+# ╔═╡ 03a78c44-8c13-11eb-27da-e11097968bc7
+max_steps = if !DEBUG 200_000 else 10 end
 
+# ╔═╡ d32d3994-8c12-11eb-1848-d9bd515709a5
+md"""
+### Training loop
+Here we define the training loop that is iterated over for at most $max_steps steps.
+"""
+
+# ╔═╡ 07e53e8e-8c13-11eb-1188-5309e353c56a
+snapshot_steps = if !DEBUG 2500 else 10 end
+
+# ╔═╡ 74917f70-8c13-11eb-3740-a7351fe64668
+md"""
+The actual training loop extracts tokens for each row's source and target text (original article vs. short summary).
+Then the loss between the model's predicted token probabilities and the ground truth probability is compared.
+The model is then updated with gradients for the encoder and gradients for decoder, embeddings, and generator.
+
+Losses are saved from every step and snapshots of the model and losses/optimizers for both parameter sets are saved in BSON format to the `./out` folder relative to the project root.
+"""
 
 # ╔═╡ 4e3ead50-8c06-11eb-39ff-a3834ba819c2
 md"""
@@ -310,7 +336,7 @@ cnndm_test() = data.cnndm_loader(data.test_type)
 first(cnndm_test())
 
 # ╔═╡ 3c1128ce-8c0e-11eb-12e4-6d52c9d8c0ab
-models = ingredients("model/abstractive.jl")
+models = ingredients("model/abstractive.jl");
 
 # ╔═╡ 0cb47e48-8c0e-11eb-0a4d-8f1bd42be2b8
 function load_model()::models.Translator
@@ -324,8 +350,22 @@ end
 # ╔═╡ e6db6ba4-8c0e-11eb-1bdb-3bc0b02e2b4f
 model = load_model()
 
+# ╔═╡ 390e1432-8c12-11eb-2697-13d8f3c0e2bf
+parameters_encoder = params(model.transformers.encoder)
+
+# ╔═╡ 3ddf05d4-8c12-11eb-0a80-e50ef061dc33
+parameters_decoder = params(
+    model.transformers.embed, 
+    model.transformers.decoder, 
+    model.transformers.generator
+)
+
+# ╔═╡ 3f117812-8c13-11eb-3b34-3988290737a7
+function train!(model::models.Translator)
+end
+
 # ╔═╡ a8bcd180-8c10-11eb-17fc-5f3dc5f516f8
-losses = ingredients("training/loss.jl")
+losses = ingredients("training/loss.jl");
 
 # ╔═╡ 811777ce-8c0f-11eb-2ac4-b51b85cd6bc9
 function loss(
@@ -339,14 +379,29 @@ function loss(
     return loss
 end
 
+# ╔═╡ 5f6dc8c0-8c12-11eb-23c7-dd764f265dbd
+model_utils = ingredients("model/utils.jl");
+
+# ╔═╡ 48ad16e2-8c12-11eb-0a9b-99f04e90d609
+md"""
+We're going to tune
+$(model_utils.params_count(parameters_encoder))
+parameters from the encoder and train 
+$(model_utils.params_count(parameters_decoder))
+parameters for the decoder, embeddings, and generator from scratch.
+"""
+
 # ╔═╡ 21da077c-8c11-11eb-0b94-45690ae9a74d
-optimizers = ingredients("training/optimizers.jl")
+optimizers = ingredients("training/optimizers.jl");
 
 # ╔═╡ 2c0590d8-8c11-11eb-1ac0-41a24f84ed58
 optimizer_encoder = optimizers.WarmupADAM(2ℯ^(-3), 20_000, (0.9, 0.99)) |> gpu
 
 # ╔═╡ 1cd3487e-8c11-11eb-173a-af13bddc850f
 optimizer_decoder = optimizers.WarmupADAM(0.1, 10_000, (0.9, 0.99)) |> gpu
+
+# ╔═╡ 7723f3a2-8c14-11eb-30c1-fd7e9f7c8f57
+data_utils = ingredients("data/utils.jl");
 
 # ╔═╡ Cell order:
 # ╟─702d3820-84d9-11eb-1895-1d00242e5363
@@ -402,13 +457,23 @@ optimizer_decoder = optimizers.WarmupADAM(0.1, 10_000, (0.9, 0.99)) |> gpu
 # ╠═619a2256-8c08-11eb-3544-2b20fba8a71d
 # ╟─c8cf0d90-8c0f-11eb-3a11-4bded8f5be4f
 # ╠═811777ce-8c0f-11eb-2ac4-b51b85cd6bc9
+# ╟─a46bcb12-8c11-11eb-0493-1505139bb2bf
+# ╠═390e1432-8c12-11eb-2697-13d8f3c0e2bf
+# ╠═3ddf05d4-8c12-11eb-0a80-e50ef061dc33
+# ╠═5f6dc8c0-8c12-11eb-23c7-dd764f265dbd
+# ╟─48ad16e2-8c12-11eb-0a9b-99f04e90d609
 # ╟─bf061ff0-8c10-11eb-108d-cf008ae94342
 # ╠═21da077c-8c11-11eb-0b94-45690ae9a74d
 # ╟─486cc03c-8c11-11eb-03cb-bb640ac822f5
 # ╠═2c0590d8-8c11-11eb-1ac0-41a24f84ed58
 # ╟─940c2c58-8c11-11eb-39b6-cf4dc61bd550
 # ╠═1cd3487e-8c11-11eb-173a-af13bddc850f
-# ╠═a46bcb12-8c11-11eb-0493-1505139bb2bf
+# ╟─d32d3994-8c12-11eb-1848-d9bd515709a5
+# ╠═03a78c44-8c13-11eb-27da-e11097968bc7
+# ╠═07e53e8e-8c13-11eb-1188-5309e353c56a
+# ╟─74917f70-8c13-11eb-3740-a7351fe64668
+# ╠═7723f3a2-8c14-11eb-30c1-fd7e9f7c8f57
+# ╠═3f117812-8c13-11eb-3b34-3988290737a7
 # ╟─4e3ead50-8c06-11eb-39ff-a3834ba819c2
 # ╟─d7e44134-8c06-11eb-150f-0b37210cff88
 # ╟─e2449708-8c06-11eb-0d09-991e4917b9d3
