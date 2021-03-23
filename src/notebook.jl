@@ -4,6 +4,15 @@
 using Markdown
 using InteractiveUtils
 
+# ╔═╡ 2f26e06e-8c08-11eb-18c0-2f8e5b0cf47a
+using CUDA
+
+# ╔═╡ 590fdac2-8c08-11eb-1c42-93ff500817c1
+using GPUArrays: allowscalar
+
+# ╔═╡ 4068759c-8c08-11eb-1d2f-d79efe98c2b0
+using Flux
+
 # ╔═╡ 38f9317a-84e2-11eb-117b-9f62916abd75
 using DataDeps
 
@@ -16,6 +25,36 @@ md"""
 
 This is a reproducability study on the ["Text Summarization with Pretrained Encoders"](https://doi.org/10.18653/v1/D19-1387) paper by Yang Liu and Mirella Lapata.
 """
+
+# ╔═╡ 176ccb48-8c08-11eb-3068-3b684ff378b5
+md"""
+## Setup
+"""
+
+# ╔═╡ 3351b1ca-8c08-11eb-14c3-8f61900721f4
+md"""
+### Load packages
+"""
+
+# ╔═╡ 1be31330-8c08-11eb-296f-6f5df8bf6e41
+md"""
+### Setup GPU with CUDA
+"""
+
+# ╔═╡ 2646eafe-8c08-11eb-2a25-c338673a3d2a
+if CUDA.functional(true)
+    # CUDA.device!(1)
+    allowscalar(false)
+    Flux.use_cuda[] = true
+    enable_gpu(true)
+else
+    @warn "You're training the model without GPU support."
+    Flux.use_cuda[] = false
+    enable_gpu(false)
+end
+
+# ╔═╡ 2ca30702-8c08-11eb-31aa-b55c7ce561fb
+
 
 # ╔═╡ 22e29d1a-84e2-11eb-3e35-f7050cfd6cc4
 md"""
@@ -81,6 +120,9 @@ We'll now load the pretrained BERT model.
 md"""
 ## Training
 """
+
+# ╔═╡ 619a2256-8c08-11eb-3544-2b20fba8a71d
+
 
 # ╔═╡ 4e3ead50-8c06-11eb-39ff-a3834ba819c2
 md"""
@@ -148,6 +190,14 @@ loader = ingredients("data/loader.jl");
 
 # ╔═╡ Cell order:
 # ╟─702d3820-84d9-11eb-1895-1d00242e5363
+# ╟─176ccb48-8c08-11eb-3068-3b684ff378b5
+# ╟─3351b1ca-8c08-11eb-14c3-8f61900721f4
+# ╠═2f26e06e-8c08-11eb-18c0-2f8e5b0cf47a
+# ╠═590fdac2-8c08-11eb-1c42-93ff500817c1
+# ╠═4068759c-8c08-11eb-1d2f-d79efe98c2b0
+# ╟─1be31330-8c08-11eb-296f-6f5df8bf6e41
+# ╠═2646eafe-8c08-11eb-2a25-c338673a3d2a
+# ╠═2ca30702-8c08-11eb-31aa-b55c7ce561fb
 # ╟─22e29d1a-84e2-11eb-3e35-f7050cfd6cc4
 # ╠═38f9317a-84e2-11eb-117b-9f62916abd75
 # ╠═0d86a904-84e3-11eb-1c0c-9d37637c8420
@@ -166,6 +216,7 @@ loader = ingredients("data/loader.jl");
 # ╟─58544bfa-84d9-11eb-3426-b3b5cc2a19a8
 # ╟─a4f8ec0a-8c06-11eb-042e-290b3405e5e6
 # ╟─3f4853dc-8c06-11eb-3a59-cdb9fc854879
+# ╠═619a2256-8c08-11eb-3544-2b20fba8a71d
 # ╟─4e3ead50-8c06-11eb-39ff-a3834ba819c2
 # ╟─d7e44134-8c06-11eb-150f-0b37210cff88
 # ╟─e2449708-8c06-11eb-0d09-991e4917b9d3
