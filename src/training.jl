@@ -7,6 +7,9 @@ using Transformers
 using Transformers.Basic
 using Transformers.Pretrain
 using BSON:@save
+using BertAbs.Data
+using BertAbs.Model
+using BertAbs.Training
 
 
 if CUDA.functional(true)
@@ -23,9 +26,6 @@ end
 
 
 @info "Load preprocessed data (CNN / Daily Mail)."
-include("data/model.jl")
-include("data/datasets.jl")
-
 cnndm_train = cnndm_loader(train_type)
 # cnndm_test = cnndm_loader("test")
 # cnndm_valid = cnndm_loader("valid")
@@ -38,18 +38,15 @@ vocabulary = Vocabulary(wordpiece.vocab[1:100], wordpiece.vocab[100]) |> gpu
 
 
 @info "Create summarization model from BERT model."
-include("model/abstractive.jl")
 # model = BertAbs(bert_model, length(vocabulary)) |> gpu
 model = TransformerAbsTiny(length(vocabulary)) |> gpu
 @show model
 
 
-include("training/common.jl")
 preprocess(text) = preprocess(text, wordpiece, tokenizer)
 loss(inputs, outputs, ground_truth) = loss(inputs, outputs, ground_truth, model, vocabulary)
 
 
-include("training/optimizers.jl")
 optimizer_encoder = WarmupADAM(2ℯ^(-3), 20_000, (0.9, 0.99)) |> gpu
 optimizer_decoder = WarmupADAM(0.1, 10_000, (0.9, 0.99)) |> gpu
 
@@ -60,7 +57,6 @@ parameters_decoder = params(
     model.transformers.decoder, 
     model.transformers.generator
 )
-include("model/utils.jl")
 @info "Found $(params_count(parameters_encoder)) trainable parameters for encoder and $(params_count(parameters_decoder)) parameters for decoder, embeddings, and generator."
 
 
@@ -71,7 +67,6 @@ snapshot_steps = 1
 losses_encoder = []
 losses_decoder = []
 start_time = now()
-include("data/utils.jl")
 for (step, summary) ∈ zip(1:max_steps, cnndm_train)
     @info "Training step $step/$max_steps."
 

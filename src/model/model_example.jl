@@ -7,6 +7,7 @@ using CUDA
 using Transformers
 using Transformers.Basic
 using Transformers.Pretrain
+using BertAbs.Model
 
 # Enable GPU for Transformers.
 enable_gpu(true)
@@ -22,7 +23,6 @@ inputs = "Peter Piper picked a peck of pickled peppers." |> preprocess |> todevi
 outputs = "Peter picked pickled peppers." |> preprocess |> todevice
 @show outputs
 
-include("abstractive.jl")
 model = BertAbs(bert_model, length(vocabulary)) |> todevice
 @show model
 
@@ -33,7 +33,6 @@ prediction = model.transformers(vocabulary, inputs, outputs)
 ground_truth = onehotbatch(outputs, vocabulary.list)
 @show size(ground_truth)
 
-include("loss.jl")
 # How good is the prediction?
 @show loss = Flux.Losses.logitcrossentropy(prediction, ground_truth)
 
