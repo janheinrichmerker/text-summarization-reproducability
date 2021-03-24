@@ -354,7 +354,7 @@ $\eta = 0.1 \cdot \min(\text{step}^{-0.5},\ \text{step} \cdot 10\,000)$
 optimizer_decoder = WarmupADAM(η=0.1, w=10_000, β=(0.9, 0.99)) |> gpu
 
 # ╔═╡ 03a78c44-8c13-11eb-27da-e11097968bc7
-max_steps = !DEBUG ? 200_000 : 10
+max_steps = !DEBUG ? 200_000 : 100
 
 # ╔═╡ d32d3994-8c12-11eb-1848-d9bd515709a5
 md"""
@@ -400,6 +400,7 @@ end
 
 # ╔═╡ 3f117812-8c13-11eb-3b34-3988290737a7
 function train!(model::Translator)
+	loss(inputs, outputs, ground_truth) = loss(inputs, outputs, ground_truth, model)
 	losses_encoder = []
 	losses_decoder = []
 	
