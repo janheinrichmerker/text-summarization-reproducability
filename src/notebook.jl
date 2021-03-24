@@ -4,6 +4,18 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        el
+    end
+end
+
+# ╔═╡ 06f8595a-8c42-11eb-3b1c-011d0706850e
+using BertAbs
+
 # ╔═╡ 2f26e06e-8c08-11eb-18c0-2f8e5b0cf47a
 using CUDA
 
@@ -14,7 +26,7 @@ using GPUArrays: allowscalar
 using Flux
 
 # ╔═╡ 8297be82-8c08-11eb-39fb-eb37f75d09e4
-using Flux: update!, reset!, onehot
+using Flux: update!, reset!, loadparams!, onehot
 
 # ╔═╡ 91e66b2c-8c08-11eb-1a3e-891e6401eb8b
 using Transformers
@@ -34,17 +46,11 @@ using Dates
 # ╔═╡ 2ed19a74-8c18-11eb-0c06-95c930bbc8c1
 using Statistics
 
+# ╔═╡ 74207314-8c47-11eb-0989-f3dab6bcffd2
+using PlutoUI
+
 # ╔═╡ 30edfac8-8c18-11eb-1d59-a5042a177b20
 using Plots
-
-# ╔═╡ 923f88c6-8c24-11eb-0642-c1384a9262db
-using Plots: plot, savefig
-
-# ╔═╡ 7442b326-8c19-11eb-3860-c5b115806a4e
-using GR
-
-# ╔═╡ 2ca30702-8c08-11eb-31aa-b55c7ce561fb
-using BertAbs
 
 # ╔═╡ 702d3820-84d9-11eb-1895-1d00242e5363
 md"""
@@ -61,19 +67,27 @@ md"""
 # ╔═╡ 400c92b8-8c17-11eb-170d-1f6b3fe06a43
 md"""
 Should we train the model before evaluating?
+
+Yes $(@bind TRAIN CheckBox(default=false))
+
 Keep in mind that training requires a lot of hardware resources and takes a long while! See the _Training loop_ section for more details.
 """
 
-# ╔═╡ 1c81ceec-8c0f-11eb-1f30-cbd6c62cf00f
-TRAIN = false
+# ╔═╡ 19fec164-8c43-11eb-3e55-1dc0c30bf8c1
+md"""
+Should evaluate the trained model?
+
+Yes $(@bind EVALUATE CheckBox(default=true))
+"""
 
 # ╔═╡ 6847039e-8c17-11eb-15b9-e70a268a56fb
 md"""
-If this toggle is set to `true`, we'll drastically over-simplify the model and data so that you should be able to train a tiny variant of the actual model on your own machine. See the _Model_ section for more details.
-"""
+Should we use a very simple model for less powerfull machines?
 
-# ╔═╡ f2ef12a6-8c09-11eb-10ae-0177f2691fdf
-DEBUG = true
+Yes $(@bind DEBUG CheckBox(default=true))
+
+If this checkbox is ticked, we'll drastically over-simplify the model and data so that you should be able to train a tiny variant of the actual model on your own machine. See the _Model_ section for more details.
+"""
 
 # ╔═╡ 3351b1ca-8c08-11eb-14c3-8f61900721f4
 md"""
@@ -145,11 +159,14 @@ Load article-summary pairs from the CNN / Daily Mail dataset's train split.
 We can get a fresh `Channel` (iterator) with training data each time we call `cnndm_train()`.
 """
 
+# ╔═╡ 9109e4e8-8c46-11eb-296d-154cfbd4db73
+data(split) = cnn_dm(split) 
+
 # ╔═╡ 32af5d7e-8c0a-11eb-1784-17984db6e6fc
-cnndm_train() = cnndm_loader(train_type)
+data_train() = data("train")
 
 # ╔═╡ 0d56f78e-8c0b-11eb-3d74-218c28817970
-first(cnndm_train())
+first(data_train())
 
 # ╔═╡ d4b77c36-8c0b-11eb-3a32-b3fc1b7e80af
 md"""
@@ -158,10 +175,10 @@ Get a `Channel` of article-summary pairs from the dataset's development/validati
 """
 
 # ╔═╡ 2a4a03e0-8c0b-11eb-0bea-2d96d67712fc
-cnndm_dev() = cnndm_loader(dev_type)
+data_dev() = data("valid")
 
 # ╔═╡ 3a4f4ce4-8c0b-11eb-3518-0907e3d2a62d
-first(cnndm_dev())
+first(data_dev())
 
 # ╔═╡ 95b154c8-8c0b-11eb-293f-f15c59a529e8
 md"""
@@ -170,10 +187,10 @@ Get a `Channel` of article-summary pairs from the dataset's test split.
 """
 
 # ╔═╡ 1c697a62-8c0b-11eb-0814-0d02d802f6fc
-cnndm_test() = cnndm_loader(test_type)
+data_test() = data("test")
 
 # ╔═╡ 395e445e-8c0b-11eb-0193-17ea21763de6
-first(cnndm_test())
+first(data_test())
 
 # ╔═╡ 6462ab2e-84e3-11eb-33dd-13e5000c78da
 md"Load preprocessed CNN/Dailymail data."
@@ -325,7 +342,7 @@ $\eta = 2\mathcal{e}^{-3} \cdot \min(\text{step}^{-0.5},\ \text{step} \cdot 20\,
 """
 
 # ╔═╡ 2c0590d8-8c11-11eb-1ac0-41a24f84ed58
-optimizer_encoder = WarmupADAM(2ℯ^(-3), 20_000, (0.9, 0.99)) |> gpu
+optimizer_encoder = WarmupADAM(η=2ℯ^(-3), w=20_000, β=(0.9, 0.99)) |> gpu
 
 # ╔═╡ 940c2c58-8c11-11eb-39b6-cf4dc61bd550
 md"""
@@ -334,7 +351,7 @@ $\eta = 0.1 \cdot \min(\text{step}^{-0.5},\ \text{step} \cdot 10\,000)$
 """
 
 # ╔═╡ 1cd3487e-8c11-11eb-173a-af13bddc850f
-optimizer_decoder = WarmupADAM(0.1, 10_000, (0.9, 0.99)) |> gpu
+optimizer_decoder = WarmupADAM(η=0.1, w=10_000, β=(0.9, 0.99)) |> gpu
 
 # ╔═╡ 03a78c44-8c13-11eb-27da-e11097968bc7
 max_steps = !DEBUG ? 200_000 : 10
@@ -357,7 +374,7 @@ The actual training loop extracts tokens for each row's source and target text (
 Then the loss between the model's predicted token probabilities and the ground truth probability is compared.
 The model is then updated with gradients for the encoder and gradients for decoder, embeddings, and generator.
 
-Losses are saved from every step and snapshots of the model and losses/optimizers for both parameter sets are saved in BSON format to the output folder:
+Losses are saved from every step and snapshots of the model weights and losses/optimizers for both parameter sets are saved in BSON format to the output folder:
 $(out_dir())
 """
 
@@ -371,8 +388,10 @@ function save_snapshot(
 		losses_encoder::AbstractVector{<:AbstractFloat},
 		losses_decoder::AbstractVector{<:AbstractFloat})
 	@info "Save model snapshot."
+	weights = params(model)
 	snapfile(time, step, name) = snapshot_file(time, step, name)
 	@save snapfile(time, step, "model.bson") model
+	@save snapfile(time, step, "weights.bson") weights
 	@save snapfile(time, step, "optimizer-encoder.bson") optimizer_encoder
 	@save snapfile(time, step, "optimizer-decoder.bson") optimizer_decoder
 	@save snapfile(time, step, "losses-encoder.bson") losses_encoder
@@ -384,7 +403,8 @@ function train!(model::Translator)
 	losses_encoder = []
 	losses_decoder = []
 	
-	for (step, summary) ∈ zip(1:max_steps, cnndm_train)
+	data = data_train()
+	for (step, summary) ∈ zip(1:max_steps, data)
    		@info "Training step $step/$max_steps."
 		inputs = summary.source |> preprocess |> gpu
 		outputs = summary.target |> preprocess |> gpu
@@ -429,7 +449,7 @@ end
 md"""
 Now train the model. Lean back and take a sip of coffee, as this takes a long while. ☕
 
-_Pro tip: If you've already trained the model, just set `TRAIN = false` and the evaluation will continue without training the model first._
+_Tip: If you've already trained the model, untick the training checkbox at the beginning of the notebook and the evaluation will continue without training the model first._
 """
 
 # ╔═╡ ded97e7a-8c16-11eb-2b04-23a5dec4405e
@@ -441,6 +461,18 @@ end
 md"""
 ## Evaluation
 """
+
+# ╔═╡ 566a15e4-8c44-11eb-3d27-a1b28fc3057d
+if EVALUATE
+	md"""
+	Evaluate training loss, select best model by development/validation loss, 
+	and measure summary quality.
+	"""
+else
+	md"""
+	**⚠️ Skipping evaluation is not yet fully supported.**
+	"""
+end
 
 # ╔═╡ 35878a0a-8c1c-11eb-0e18-d1964db60a67
 md"""
@@ -478,22 +510,25 @@ $(out_dir())
 """
 
 # ╔═╡ dc238b06-8c1d-11eb-3cf2-495db70ac90a
-model_snapshots, max_step = snapshot_files(
+weights_snapshots, max_step = EVALUATE ? snapshot_files(
 	eval_start_time,
 	eval_snapshot_steps,
-	"model.bson"
-)
+	"weights.bson"
+) : ([],0)
+
+# ╔═╡ c44ed108-8c49-11eb-30d2-73e41b46aed7
+has_weights_snapshot = !isempty(weights_snapshots)
 
 # ╔═╡ 873bb7ca-8c1e-11eb-08f7-755484003009
-if isempty(model_snapshots)
+if !has_weights_snapshot
 	md"""
-	**⚠️ Could not find any model snapshot for training 
+	**⚠️ Could not find any weights snapshot for training 
 	started at $(Dates.format(eval_start_time, "yyyy-mm-dd (at HH:MM)")) 
 	with snapshotting every $eval_snapshot_steps steps.**
 	"""
 else
 	md"""
-	Found $(length(model_snapshots)) snapshots for training 
+	Found $(length(weights_snapshots)) snapshots for training 
 	started at $(Dates.format(eval_start_time, "yyyy-mm-dd (at HH:MM)"))  
 	with snapshotting every $eval_snapshot_steps steps.
 	The last snapshot is from step $max_step.
@@ -511,10 +546,14 @@ Show loss on the training set at each iteration
 
 # ╔═╡ 7e4da548-8c22-11eb-1b3c-81269c4f5f5a
 function plot_losses()
+	if !has_weights_snapshot
+		return
+	end
+	
 	@load eval_snapshot_file("losses-encoder.bson") losses_encoder
 	@load eval_snapshot_file("losses-decoder.bson") losses_decoder
 	loss_plot = plot(
-		title = "Generator classification loss",
+		title = "Generator classification loss during training",
 		xlabel = "steps",
 		ylabel = "cross entropy loss",
     	xticks = 0:eval_snapshot_steps:max_step,
@@ -543,7 +582,7 @@ Loading and caching to the GPU might take a short moment.
 """
 
 # ╔═╡ 97423bde-8c18-11eb-2b01-8526b32161d4
-dev_summaries = collect(cnndm_dev()) |> gpu
+dev_summaries = collect(data_dev()) |> gpu
 
 # ╔═╡ 40f5d3de-8c2a-11eb-2e1b-d39b430a6550
 function dev_loss(translator::Translator; agg=mean)::AbstractFloat
@@ -561,17 +600,20 @@ end
 # ╔═╡ 7cb9dfd2-8c2a-11eb-27ac-811c01ba9368
 function find_best_model(;agg=mean)::Translator
     best_loss = Inf
-    local best_model
-    for snapshot ∈ model_snapshots
+    model = load_model()
+    for snapshot ∈ weights_snapshots
         @info "Load model snapshot $snapshot."
-		@load snapshot model
+		@load snapshot weights
+		loadparams!(model, weights)
         loss = dev_loss(model, agg=agg)
         if loss < best_loss
             best_loss = loss
-            best_model = model
         end
     end
-    return best_model
+	if best_loss == Inf
+		throw(ErrorException("Could not find model."))
+	end
+    return model
 end
 
 # ╔═╡ c33a3092-8c2a-11eb-03c3-d74e98a3867c
@@ -590,7 +632,7 @@ Loading and caching to the GPU might take a short moment.
 """
 
 # ╔═╡ 3e25c08a-8c28-11eb-143b-b996590c22d4
-test_summaries = collect(cnndm_test()) |> gpu
+test_summaries = collect(data_test()) |> gpu
 
 # ╔═╡ a2ef84f2-8c07-11eb-0a94-21ebe1ed471a
 md"""
@@ -612,10 +654,10 @@ These summaries are maually examined and scored on the following scale:
 # ╟─702d3820-84d9-11eb-1895-1d00242e5363
 # ╟─176ccb48-8c08-11eb-3068-3b684ff378b5
 # ╟─400c92b8-8c17-11eb-170d-1f6b3fe06a43
-# ╠═1c81ceec-8c0f-11eb-1f30-cbd6c62cf00f
+# ╟─19fec164-8c43-11eb-3e55-1dc0c30bf8c1
 # ╟─6847039e-8c17-11eb-15b9-e70a268a56fb
-# ╠═f2ef12a6-8c09-11eb-10ae-0177f2691fdf
 # ╟─3351b1ca-8c08-11eb-14c3-8f61900721f4
+# ╠═06f8595a-8c42-11eb-3b1c-011d0706850e
 # ╠═2f26e06e-8c08-11eb-18c0-2f8e5b0cf47a
 # ╠═590fdac2-8c08-11eb-1c42-93ff500817c1
 # ╠═4068759c-8c08-11eb-1d2f-d79efe98c2b0
@@ -626,10 +668,8 @@ These summaries are maually examined and scored on the following scale:
 # ╠═98c4351e-8c08-11eb-14fe-7df792e4b7cf
 # ╠═44df9b3a-8c16-11eb-17a7-3d6038911fc5
 # ╠═2ed19a74-8c18-11eb-0c06-95c930bbc8c1
+# ╠═74207314-8c47-11eb-0989-f3dab6bcffd2
 # ╠═30edfac8-8c18-11eb-1d59-a5042a177b20
-# ╠═923f88c6-8c24-11eb-0642-c1384a9262db
-# ╠═7442b326-8c19-11eb-3860-c5b115806a4e
-# ╠═2ca30702-8c08-11eb-31aa-b55c7ce561fb
 # ╟─1be31330-8c08-11eb-296f-6f5df8bf6e41
 # ╠═2646eafe-8c08-11eb-2a25-c338673a3d2a
 # ╟─dbc654f4-8c18-11eb-059e-f91749357883
@@ -641,6 +681,7 @@ These summaries are maually examined and scored on the following scale:
 # ╠═29348670-84e4-11eb-076b-b78a92e94642
 # ╟─98474e70-8c06-11eb-28c4-35bd54c8a558
 # ╟─44848686-8c0b-11eb-064c-7f56c697e69c
+# ╠═9109e4e8-8c46-11eb-296d-154cfbd4db73
 # ╠═32af5d7e-8c0a-11eb-1784-17984db6e6fc
 # ╠═0d56f78e-8c0b-11eb-3d74-218c28817970
 # ╟─d4b77c36-8c0b-11eb-3a32-b3fc1b7e80af
@@ -687,6 +728,7 @@ These summaries are maually examined and scored on the following scale:
 # ╟─be5c7b3c-8c16-11eb-1a3f-01eadf6bc1bb
 # ╠═ded97e7a-8c16-11eb-2b04-23a5dec4405e
 # ╟─4e3ead50-8c06-11eb-39ff-a3834ba819c2
+# ╟─566a15e4-8c44-11eb-3d27-a1b28fc3057d
 # ╟─35878a0a-8c1c-11eb-0e18-d1964db60a67
 # ╟─9bcff242-8c1d-11eb-007f-6b3ae5b2ef6a
 # ╠═546c963e-8c1c-11eb-0762-cbecc179fdf0
@@ -696,6 +738,7 @@ These summaries are maually examined and scored on the following scale:
 # ╠═bd5cde20-8c1d-11eb-25f4-c1d10590778a
 # ╟─110108b4-8c3d-11eb-230e-f1f8ef3985ff
 # ╠═dc238b06-8c1d-11eb-3cf2-495db70ac90a
+# ╠═c44ed108-8c49-11eb-30d2-73e41b46aed7
 # ╟─873bb7ca-8c1e-11eb-08f7-755484003009
 # ╠═9fcbdd2e-8c21-11eb-0e59-63649715d380
 # ╟─216e718c-8c1c-11eb-066f-f705805cb70e

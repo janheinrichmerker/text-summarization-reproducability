@@ -2,7 +2,7 @@ module BertAbs
 
 include("data/Data.jl")
 using BertAbs.Data
-export SummaryPair, CorpusType, xsum_loader, cnndm_loader, out_dir, snapshot_file, snapshot_files
+export SummaryPair, xsum, cnn_dm, out_dir, snapshot_file, snapshot_files
 include("search/Search.jl")
 using BertAbs.Search
 include("model/Model.jl")

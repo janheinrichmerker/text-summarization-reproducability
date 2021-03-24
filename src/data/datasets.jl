@@ -33,8 +33,8 @@ xsum_dependency = DataDep(
     post_fetch_method=unpack,
 )
 
-function xsum_loader(type::CorpusType)::Channel{SummaryPair}
-    return data_loader(
+function xsum(type::String)::Channel{SummaryPair}
+    return summaries(
         joinpath(
             datadep"XSum-Preprocessed-BERT",
             "bert_data_xsum_new"
@@ -43,7 +43,7 @@ function xsum_loader(type::CorpusType)::Channel{SummaryPair}
     )
 end
 
-cnndm_dependency = DataDep(
+cnn_dm_dependency = DataDep(
     "CNN-Daily-Mail-Preprocessed-BERT",
     """
     Preprocessed CNN / Daily Mail summary data for BERT-based summarization.
@@ -73,8 +73,8 @@ cnndm_dependency = DataDep(
     post_fetch_method=unpack,
 )
 
-function cnndm_loader(type::CorpusType)::Channel{SummaryPair}
-    return data_loader(
+function cnn_dm(type::String)::Channel{SummaryPair}
+    return summaries(
         joinpath(
             datadep"CNN-Daily-Mail-Preprocessed-BERT",
             "bert_data_cnndm_final"
