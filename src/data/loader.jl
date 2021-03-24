@@ -1,11 +1,10 @@
 using PyCall
 
-torch = pyimport_conda("torch", "pytorch")
-
 # Load preprocessed data from a single PyTorch Pickle file.
 # As Julia does not support parsing PyTorch files itself,
 # delegate to the Python package instead. 
 function load_torch(path::String)
+	torch = pyimport_conda("torch", "pytorch")
     @info "Loading PyTorch file '$path'."
     dataset = torch.load(abspath(path))
     return dataset
