@@ -13,9 +13,6 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 06f8595a-8c42-11eb-3b1c-011d0706850e
-using BertAbs
-
 # ╔═╡ 2f26e06e-8c08-11eb-18c0-2f8e5b0cf47a
 using CUDA
 
@@ -52,6 +49,9 @@ using PlutoUI
 # ╔═╡ 30edfac8-8c18-11eb-1d59-a5042a177b20
 using Plots
 
+# ╔═╡ 06f8595a-8c42-11eb-3b1c-011d0706850e
+using BertAbs
+
 # ╔═╡ 702d3820-84d9-11eb-1895-1d00242e5363
 md"""
 # Reproducing Text Summarization with Pretrained Encoders
@@ -68,7 +68,7 @@ md"""
 md"""
 Should we train the model before evaluating?
 
-Yes $(@bind TRAIN CheckBox(default=false))
+Yes $(@bind TRAIN CheckBox(default=get(ENV, "TRAIN", false)))
 
 Keep in mind that training requires a lot of hardware resources and takes a long while! See the _Training loop_ section for more details.
 """
@@ -77,14 +77,14 @@ Keep in mind that training requires a lot of hardware resources and takes a long
 md"""
 Should evaluate the trained model?
 
-Yes $(@bind EVALUATE CheckBox(default=true))
+Yes $(@bind EVALUATE CheckBox(default=get(ENV, "EVALUATE", true)))
 """
 
 # ╔═╡ 6847039e-8c17-11eb-15b9-e70a268a56fb
 md"""
 Should we use a very simple model for less powerfull machines?
 
-Yes $(@bind DEBUG CheckBox(default=true))
+Yes $(@bind DEBUG CheckBox(default=get(ENV, "DEBUG", true)))
 
 If this checkbox is ticked, we'll drastically over-simplify the model and data so that you should be able to train a tiny variant of the actual model on your own machine. See the _Model_ section for more details.
 """
@@ -657,7 +657,6 @@ These summaries are maually examined and scored on the following scale:
 # ╟─19fec164-8c43-11eb-3e55-1dc0c30bf8c1
 # ╟─6847039e-8c17-11eb-15b9-e70a268a56fb
 # ╟─3351b1ca-8c08-11eb-14c3-8f61900721f4
-# ╠═06f8595a-8c42-11eb-3b1c-011d0706850e
 # ╠═2f26e06e-8c08-11eb-18c0-2f8e5b0cf47a
 # ╠═590fdac2-8c08-11eb-1c42-93ff500817c1
 # ╠═4068759c-8c08-11eb-1d2f-d79efe98c2b0
@@ -670,6 +669,7 @@ These summaries are maually examined and scored on the following scale:
 # ╠═2ed19a74-8c18-11eb-0c06-95c930bbc8c1
 # ╠═74207314-8c47-11eb-0989-f3dab6bcffd2
 # ╠═30edfac8-8c18-11eb-1d59-a5042a177b20
+# ╠═06f8595a-8c42-11eb-3b1c-011d0706850e
 # ╟─1be31330-8c08-11eb-296f-6f5df8bf6e41
 # ╠═2646eafe-8c08-11eb-2a25-c338673a3d2a
 # ╟─dbc654f4-8c18-11eb-059e-f91749357883
