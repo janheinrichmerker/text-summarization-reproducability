@@ -68,23 +68,23 @@ md"""
 md"""
 Should we train the model before evaluating?
 
-Yes $(@bind TRAIN CheckBox(default=get(ENV, "TRAIN", false)))
+Yes $(@bind TRAIN CheckBox(default=(get(ENV, "TRAIN", "false") == "true")))
 
 Keep in mind that training requires a lot of hardware resources and takes a long while! See the _Training loop_ section for more details.
 """
 
 # ╔═╡ 19fec164-8c43-11eb-3e55-1dc0c30bf8c1
 md"""
-Should evaluate the trained model?
+Should we evaluate the trained model?
 
-Yes $(@bind EVALUATE CheckBox(default=get(ENV, "EVALUATE", true)))
+Yes $(@bind EVALUATE CheckBox(default=(get(ENV, "EVALUATE", "true") == "true")))
 """
 
 # ╔═╡ 6847039e-8c17-11eb-15b9-e70a268a56fb
 md"""
 Should we use a very simple model for less powerfull machines?
 
-Yes $(@bind DEBUG CheckBox(default=get(ENV, "DEBUG", true)))
+Yes $(@bind DEBUG CheckBox(default=(get(ENV, "DEBUG", "true") == "true")))
 
 If this checkbox is ticked, we'll drastically over-simplify the model and data so that you should be able to train a tiny variant of the actual model on your own machine. See the _Model_ section for more details.
 """
@@ -378,6 +378,9 @@ Losses are saved from every step and snapshots of the model weights and losses/o
 $(out_dir())
 """
 
+# ╔═╡ ae61b104-8c57-11eb-3074-d5445b61f010
+train_loss(inputs, outputs, ground_truth) = loss(inputs, outputs, ground_truth, model)
+
 # ╔═╡ b4dbc124-8c15-11eb-009d-7b3e0a26ba4d
 function save_snapshot(
 		time::DateTime,
@@ -400,7 +403,6 @@ end
 
 # ╔═╡ 3f117812-8c13-11eb-3b34-3988290737a7
 function train!(model::Translator)
-	loss(inputs, outputs, ground_truth) = loss(inputs, outputs, ground_truth, model)
 	losses_encoder = []
 	losses_decoder = []
 	
@@ -412,35 +414,39 @@ function train!(model::Translator)
 		ground_truth = onehot(vocabulary, outputs) |> gpu
 		
 		
-		@info "Train encoder."
+		@info "Calculate encoder gradients."
 		local loss_encoder
 		gradients_encoder = gradient(parameters_encoder) do
-			loss_encoder = loss(inputs, outputs, ground_truth)
+			loss_encoder = train_loss(inputs, outputs, ground_truth)
 			return loss_encoder
 		end
 		push!(losses_encoder, loss_encoder)
-		@info "Updating encoder parameters." loss_encoder
-		update!(optimizer_encoder, parameters_encoder, gradients_encoder)
 
-		
-		@info "Train decoder, embeddings, and generator."
+		@info "Calculate decoder, embeddings, and generator gradients."
 		local loss_decoder
 		gradients_decoder = gradient(parameters_decoder) do
-			loss_decoder = loss(inputs, outputs, ground_truth)
+			loss_decoder = train_loss(inputs, outputs, ground_truth)
 			return loss_decoder
 		end
 		push!(losses_decoder, loss_decoder)
+
+		
+		@info "Updating encoder parameters." loss_encoder
+		update!(optimizer_encoder, parameters_encoder, gradients_encoder)
+		
 		@info "Updating decoder, embeddings, and generator parameters." loss_decoder
 		update!(optimizer_decoder, parameters_decoder, gradients_decoder)
 		
 		
 		if step % snapshot_steps == 0
 			save_snapshot(
+				start_time,
+				step,
 				model |> cpu,
 				optimizer_encoder |> cpu,
 				optimizer_decoder |> cpu,
-				losses_encoder,
-				losses_decoder,
+				losses_encoder |> cpu,
+				losses_decoder |> cpu,
 			)
 		end
 	end
@@ -724,6 +730,7 @@ These summaries are maually examined and scored on the following scale:
 # ╠═07e53e8e-8c13-11eb-1188-5309e353c56a
 # ╠═79b63cd0-8c1c-11eb-3b31-1395f64e979d
 # ╟─ef68c91e-8c3c-11eb-393a-5145b8cff911
+# ╠═ae61b104-8c57-11eb-3074-d5445b61f010
 # ╠═3f117812-8c13-11eb-3b34-3988290737a7
 # ╠═b4dbc124-8c15-11eb-009d-7b3e0a26ba4d
 # ╟─be5c7b3c-8c16-11eb-1a3f-01eadf6bc1bb
