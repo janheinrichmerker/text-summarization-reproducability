@@ -1,9 +1,29 @@
 \section{Experimental Evaluation (70/300)}
 
+We fine-tune and evaluate the BertAbs summarization model on a A100 GPU using the Flux~\cite{InnesSFGRJKPS2018} on Julia~\cite{BezansonEKS2017}.
+A smaller variant is trained on a GeForce MX150 to {\color{red} test our evaluation workflow}.
+
+\subsection{Dataset}
+
+We train and evaluate the summarization model on the CNN / Daily Mail dataset~\cite{HermannKGEKSB2015}, but use preprocessed data released by \citeauthor{LiuL2019} along with the replicated paper.
+From this preprocessed data we extract the source article and the target summary as raw text, join sentences to normalize separators, and tokenize with BERT's word piece tokenizer~\cite{DevlinCLT2019}.
+
+\subsection{Abstractive Summarizaion Model}
+
+
 Describe implementation structure/approach. (Julia/Flux, data loading (Bert, CNN, Daily Mail), tokenization (Bert), model structure (encoder-decoder, beam search), hyperparameter tuning, optimizer)
+
 Describe simple tests/examples for checking implementation correctness.
+
 Describe implementation memory usage, complexity, and run time performance.
+The full BertAbs model contains 182M trainable parameters: 27M for embeddings, 85M for the encoder's transformer layers, 47M for the decoder's transformer layers, and 23M for the generator layer.
+Presumably because of the high number of parameters to tune, training this BertAbs model on a A100 GPU uses about 40GB of memory at a speed of about 9 steps per minute.
+Because of the slow training speed even on a powerful GPU we had to cancel training the model after 22\,500 steps
+
 Describe raw data format.
+
 Describe data preprocessing. (Pre-processed dataset from \citeauthor{LiuL2019}: Sentence splitting  with Stanford CoreNLP, entities are not anonymized.)
+
 Describe experiment reproductions.
+
 Describe/list difficulties or problems. (Pretrained data not available from a data source that allows automatic downloads.)
