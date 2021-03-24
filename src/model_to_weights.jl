@@ -28,7 +28,7 @@ model_snapshots = filter(
 
 weights_snapshots = filter(
     file -> isfile(file) && occursin("weights.bson", file), 
-    weights_snapshots
+    snapshots
 )
 
 new_weights_snapshots = filter(
