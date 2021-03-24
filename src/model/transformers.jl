@@ -2,11 +2,6 @@ using Flux
 using Transformers
 using Transformers.Basic
 
-include("encoder.jl")
-include("decoder.jl")
-include("embed.jl")
-include("generator.jl")
-
 struct TransformersModel
     embed::Union{WordPositionEmbed,CompositeEmbedding}
     encoder::Union{Encoder,Bert}

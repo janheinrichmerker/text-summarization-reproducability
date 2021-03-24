@@ -1,6 +1,5 @@
 using Transformers.Basic
-
-include("../search/beam_search.jl")
+using BertAbs.Search
 
 struct BeamSearch
     width::Integer

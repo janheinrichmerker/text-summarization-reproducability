@@ -1,10 +1,9 @@
 using TextAnalysis
 using Statistics:mean
 using Transformers
-using Transformers.BidirectionalEncoder
-
-include("../data/model.jl")
-include("../model/translator.jl")
+using Transformers.BidirectionalEncoder:WordPiece
+using BertAbs.Data
+using BertAbs.Model
 
 Sample = NamedTuple{(:reference, :candidate),Tuple{String,String}}
 

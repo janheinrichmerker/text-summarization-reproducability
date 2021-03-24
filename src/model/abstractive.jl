@@ -1,12 +1,6 @@
 using Transformers
 using Transformers.Basic
 
-include("decoder.jl")
-include("embed.jl")
-include("generator.jl")
-include("transformers.jl")
-include("translator.jl")
-
 # BertAbs transformer model for abstractive summarization 
 # from the "Text Summarization with Pretrained Encoders" paper 
 # by Liu et al. (2019) as described on page 6.

@@ -2,9 +2,6 @@ using Flux
 using Transformers
 using Transformers.Basic
 
-include("transformers.jl")
-include("beam_search.jl")
-
 struct Translator
     transformers::TransformersModel
     beam_search::BeamSearch

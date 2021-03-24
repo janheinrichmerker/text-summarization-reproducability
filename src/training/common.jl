@@ -1,7 +1,7 @@
 using Transformers.Basic
 using Transformers.BidirectionalEncoder:WordPiece
+using BertAbs.Model
 
-include("../model/translator.jl")
 include("loss.jl")
 
 function preprocess(text::String, wordpiece::WordPiece, tokenizer::Function)::AbstractVector{String}

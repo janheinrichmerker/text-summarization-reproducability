@@ -12,8 +12,6 @@ function load_torch(path::String)
     return dataset
 end
 
-include("model.jl")
-
 # Create an iterator for rows of the preprocessed data.
 function data_loader(paths::Array{String})::Channel{SummaryPair}
 	return Channel{SummaryPair}() do channel
