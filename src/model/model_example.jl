@@ -7,7 +7,7 @@ using CUDA
 using Transformers
 using Transformers.Basic
 using Transformers.Pretrain
-using BertAbs.Model
+using PreSumm.Model
 
 # Enable GPU for Transformers.
 enable_gpu(true)

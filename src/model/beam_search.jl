@@ -1,5 +1,5 @@
 using Transformers.Basic
-using BertAbs.Search
+using PreSumm.Search
 
 struct BeamSearch
     width::Integer

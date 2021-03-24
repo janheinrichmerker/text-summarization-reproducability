@@ -2,8 +2,8 @@ using TextAnalysis
 using Statistics:mean
 using Transformers
 using Transformers.BidirectionalEncoder:WordPiece
-using BertAbs.Data
-using BertAbs.Model
+using PreSumm.Data
+using PreSumm.Model
 
 Sample = NamedTuple{(:reference, :candidate),Tuple{String,String}}
 

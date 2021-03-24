@@ -50,7 +50,7 @@ using PlutoUI
 using Plots
 
 # ╔═╡ 06f8595a-8c42-11eb-3b1c-011d0706850e
-using BertAbs
+using PreSumm
 
 # ╔═╡ 998b0178-8c60-11eb-2804-190b910dc7d8
 begin

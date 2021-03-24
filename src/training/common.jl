@@ -1,6 +1,6 @@
 using Transformers.Basic
 using Transformers.BidirectionalEncoder:WordPiece
-using BertAbs.Model
+using PreSumm.Model
 
 include("loss.jl")
 

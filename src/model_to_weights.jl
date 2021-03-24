@@ -1,4 +1,4 @@
-using BertAbs
+using PreSumm
 using CUDA
 using GPUArrays:allowscalar
 using Flux

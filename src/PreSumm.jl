@@ -1,18 +1,18 @@
-module BertAbs
+module PreSumm
 
 include("data/Data.jl")
-using BertAbs.Data
+using PreSumm.Data
 export SummaryPair, xsum, cnn_dm, out_dir, snapshot_file, snapshot_files
 include("search/Search.jl")
-using BertAbs.Search
+using PreSumm.Search
 include("model/Model.jl")
-using BertAbs.Model
+using PreSumm.Model
 export Encoder, Decoder, WordPositionEmbed, Generator, TransformersModel, BeamSearch, Translator, BertAbs, TransformerAbs, TransformerAbsTiny, params_count
 include("evaluation/Evaluation.jl")
-using BertAbs.Evaluation
+using PreSumm.Evaluation
 export mean_rouge_n, mean_rouge_l
 include("training/Training.jl")
-using BertAbs.Training
+using PreSumm.Training
 export preprocess, loss, logtranslationloss, Warmup, WarmupADAM
 
 end # module
