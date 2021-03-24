@@ -26,17 +26,14 @@ at [Martin Luther University Halle-Wittenberg](https://uni-halle.de)._
     julia --project=./ ./src/setup_python.jl
     ```
 
-1. Train the model.
-
-    ```shell script
-    julia --project=./ ./src/training.jl
-    ```
-
 1. Start [Pluto](https://github.com/fonsp/Pluto.jl) notebook.
 
     ```shell script
     julia --project=./ ./src/start_notebook.jl
     ```
+
+    To train the model, tick the corresponding checkbox from the notebook.
+    Alternatively, run `julia --project=./ ./src/training.jl` (which just runs the training from the notebook).
 
 #### Local Julia installation
 
@@ -67,7 +64,7 @@ You can then run Julia with `./julia`.
 
 ## Code quality
 
-To keep code quality at a high level, all commits are atomar, which can be checked using the following command.
+To keep code quality at a high level, all commits are atomic, which can be checked using the following command.
 
 ```shell script
 git --no-pager log --all --graph --no-color --date=short --pretty='format:%h%d (%s, %ad)'
