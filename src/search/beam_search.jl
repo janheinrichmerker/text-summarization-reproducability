@@ -1,11 +1,10 @@
+using Flux
+
 struct Path{T}
     sequence::Array{T}
     log_probability::AbstractFloat
     score::AbstractFloat
 end
-
-is_probability(x) = x >= 0 && x <= 1
-is_log_probability(x) = is_probability(exp(x))
 
 function expand(
     path::Path{T},
@@ -14,7 +13,7 @@ function expand(
     length_normalization::AbstractFloat
 )::AbstractVector{Path{T}} where T
     # Compute probabilities for next token.
-    log_word_probabilities = predict(path.sequence)
+    log_word_probabilities = predict(path.sequence |> gpu)
 
     # Combine with own log probability.
     # Addition because log(p1 * p2) = log(p1) + log(p2).
