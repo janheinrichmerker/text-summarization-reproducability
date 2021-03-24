@@ -52,6 +52,14 @@ using Plots
 # ╔═╡ 06f8595a-8c42-11eb-3b1c-011d0706850e
 using BertAbs
 
+# ╔═╡ 998b0178-8c60-11eb-2804-190b910dc7d8
+begin
+	# Workaround for issue:
+	# https://github.com/fonsp/Pluto.jl/issues/301
+	using Zygote, BSON
+	Core.eval(Main, :(using Zygote))
+end
+
 # ╔═╡ 702d3820-84d9-11eb-1895-1d00242e5363
 md"""
 # Reproducing Text Summarization with Pretrained Encoders
@@ -354,7 +362,7 @@ $\eta = 0.1 \cdot \min(\text{step}^{-0.5},\ \text{step} \cdot 10\,000)$
 optimizer_decoder = WarmupADAM(η=0.1, w=10_000, β=(0.9, 0.99)) |> gpu
 
 # ╔═╡ 03a78c44-8c13-11eb-27da-e11097968bc7
-max_steps = !DEBUG ? 200_000 : 100
+max_steps = !DEBUG ? 200_000 : 200
 
 # ╔═╡ d32d3994-8c12-11eb-1848-d9bd515709a5
 md"""
@@ -485,6 +493,8 @@ end
 md"""
 ### Configuration
 Define the training run we want to evaluate.
+If training is activated, this is automatically set to the current training run.
+Otherwise, you can select a file manually.
 """
 
 # ╔═╡ 9bcff242-8c1d-11eb-007f-6b3ae5b2ef6a
@@ -493,7 +503,7 @@ When did the chosen model start training?
 """
 
 # ╔═╡ 546c963e-8c1c-11eb-0762-cbecc179fdf0
-custom_start_time = DateTime(2021, 03, 22, 17, 50)
+custom_start_time = DateTime(2021, 03, 24, 06, 06)
 
 # ╔═╡ 655f933a-8c1c-11eb-1fb0-636b021637b6
 eval_start_time = TRAIN ? start_time : custom_start_time
@@ -504,7 +514,7 @@ What was the rate at which snapshots were saved for that model?
 """
 
 # ╔═╡ 87ceb29c-8c1d-11eb-2534-39649a087b4f
-custom_snapshot_steps = 2500
+custom_snapshot_steps = 10
 
 # ╔═╡ bd5cde20-8c1d-11eb-25f4-c1d10590778a
 eval_snapshot_steps = TRAIN ? snapshot_steps : custom_snapshot_steps
@@ -552,7 +562,7 @@ Show loss on the training set at each iteration
 """
 
 # ╔═╡ 7e4da548-8c22-11eb-1b3c-81269c4f5f5a
-function plot_losses()
+function plot_train_loss()
 	if !has_weights_snapshot
 		return
 	end
@@ -566,14 +576,14 @@ function plot_losses()
     	xticks = 0:eval_snapshot_steps:max_step,
 	)
 	plot!(loss_plot, losses_encoder, label="encoder")
-	plot!(loss_plot, losses_decoder, label="dcoder, embeddings, generator")
+	plot!(loss_plot, losses_decoder, label="decoder, embeddings, generator")
 	savefig(loss_plot, joinpath(out_dir(), "training-loss.pdf"))
 	savefig(loss_plot, joinpath(out_dir(), "training-loss.png"))
 	loss_plot
 end;
 
 # ╔═╡ a39ba53e-8c22-11eb-04af-95d7d112f67d
-plot_losses()
+plot_train_loss()
 
 # ╔═╡ 16ccaf1a-8c2a-11eb-274a-5d8831732be1
 md"""
@@ -591,22 +601,34 @@ Loading and caching to the GPU might take a short moment.
 # ╔═╡ 97423bde-8c18-11eb-2b01-8526b32161d4
 dev_summaries = collect(data_dev()) |> gpu
 
+# ╔═╡ fcd40322-8c6c-11eb-0259-1d2abf1c7b03
+md"""
+Select the best model by mean loss on validation data.
+"""
+
 # ╔═╡ 40f5d3de-8c2a-11eb-2e1b-d39b430a6550
 function dev_loss(translator::Translator; agg=mean)::AbstractFloat
     losses = []
-    for summary ∈ dev_summaries
+	summaries = !DEBUG ? dev_summaries : dev_summaries[1:10]
+    for summary ∈ summaries
         inputs = summary.source |> preprocess |> gpu
         outputs = summary.target |> preprocess |> gpu
         ground_truth = onehot(vocabulary, outputs) |> gpu
-        loss = loss(inputs, outputs, ground_truth, translator)
-        push!(losses, loss)
+        current_loss = loss(inputs, outputs, ground_truth, translator)
+        push!(losses, current_loss)
     end
     return agg(losses)
 end
 
+# ╔═╡ 1fc901de-8c6d-11eb-0c4e-394aa014313f
+md"""
+Load weights of each snapshot, load weights into model and check if the model performs better on the dev set.
+"""
+
 # ╔═╡ 7cb9dfd2-8c2a-11eb-27ac-811c01ba9368
 function find_best_model(;agg=mean)::Translator
     best_loss = Inf
+	best_weights = nothing
     model = load_model()
     for snapshot ∈ weights_snapshots
         @info "Load model snapshot $snapshot."
@@ -614,12 +636,15 @@ function find_best_model(;agg=mean)::Translator
 		loadparams!(model, weights)
         loss = dev_loss(model, agg=agg)
         if loss < best_loss
+			@info "New best model."
             best_loss = loss
+			best_weights = weights
         end
     end
-	if best_loss == Inf
+	if best_weights == nothing
 		throw(ErrorException("Could not find model."))
 	end
+	loadparams!(model, best_weights)
     return model
 end
 
@@ -640,6 +665,12 @@ Loading and caching to the GPU might take a short moment.
 
 # ╔═╡ 3e25c08a-8c28-11eb-143b-b996590c22d4
 test_summaries = collect(data_test()) |> gpu
+
+# ╔═╡ a5adebd0-8c6c-11eb-14af-019f37d78469
+test_source = test_summaries[1].source |> preprocess |> gpu
+
+# ╔═╡ ab6b0af8-8c62-11eb-02ad-d94033352713
+best_model(test_source, vocabulary)
 
 # ╔═╡ a2ef84f2-8c07-11eb-0a94-21ebe1ed471a
 md"""
@@ -677,6 +708,7 @@ These summaries are maually examined and scored on the following scale:
 # ╠═74207314-8c47-11eb-0989-f3dab6bcffd2
 # ╠═30edfac8-8c18-11eb-1d59-a5042a177b20
 # ╠═06f8595a-8c42-11eb-3b1c-011d0706850e
+# ╠═998b0178-8c60-11eb-2804-190b910dc7d8
 # ╟─1be31330-8c08-11eb-296f-6f5df8bf6e41
 # ╠═2646eafe-8c08-11eb-2a25-c338673a3d2a
 # ╟─dbc654f4-8c18-11eb-059e-f91749357883
@@ -737,7 +769,7 @@ These summaries are maually examined and scored on the following scale:
 # ╠═ded97e7a-8c16-11eb-2b04-23a5dec4405e
 # ╟─4e3ead50-8c06-11eb-39ff-a3834ba819c2
 # ╟─566a15e4-8c44-11eb-3d27-a1b28fc3057d
-# ╟─35878a0a-8c1c-11eb-0e18-d1964db60a67
+# ╠═35878a0a-8c1c-11eb-0e18-d1964db60a67
 # ╟─9bcff242-8c1d-11eb-007f-6b3ae5b2ef6a
 # ╠═546c963e-8c1c-11eb-0762-cbecc179fdf0
 # ╠═655f933a-8c1c-11eb-1fb0-636b021637b6
@@ -755,11 +787,15 @@ These summaries are maually examined and scored on the following scale:
 # ╟─16ccaf1a-8c2a-11eb-274a-5d8831732be1
 # ╟─b3692f86-8c1b-11eb-3425-35027febcec0
 # ╠═97423bde-8c18-11eb-2b01-8526b32161d4
+# ╟─fcd40322-8c6c-11eb-0259-1d2abf1c7b03
 # ╠═40f5d3de-8c2a-11eb-2e1b-d39b430a6550
+# ╟─1fc901de-8c6d-11eb-0c4e-394aa014313f
 # ╠═7cb9dfd2-8c2a-11eb-27ac-811c01ba9368
 # ╠═c33a3092-8c2a-11eb-03c3-d74e98a3867c
 # ╟─e2449708-8c06-11eb-0d09-991e4917b9d3
 # ╟─26d83e30-8c28-11eb-3107-a3df1788bc2f
 # ╠═3e25c08a-8c28-11eb-143b-b996590c22d4
+# ╠═a5adebd0-8c6c-11eb-14af-019f37d78469
+# ╠═ab6b0af8-8c62-11eb-02ad-d94033352713
 # ╟─a2ef84f2-8c07-11eb-0a94-21ebe1ed471a
 # ╟─f67d71ea-8c06-11eb-06a9-550a8d54c139
