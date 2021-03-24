@@ -43,8 +43,8 @@ using Plots: plot, savefig
 # ╔═╡ 7442b326-8c19-11eb-3860-c5b115806a4e
 using GR
 
-# ╔═╡ 38f9317a-84e2-11eb-117b-9f62916abd75
-using DataDeps
+# ╔═╡ 2ca30702-8c08-11eb-31aa-b55c7ce561fb
+using BertAbs
 
 # ╔═╡ 702d3820-84d9-11eb-1895-1d00242e5363
 md"""
@@ -138,13 +138,6 @@ md"""
 ### Data loading
 """
 
-# ╔═╡ 2e4da306-85d6-11eb-0957-1182af2f9302
-md"""
-Include data dependency definitions.
-To keep the notebook readable, data loading is included from a separate file.
-(Note the usage of `ingredients()` instead of `include()`: This is needed to avoid namespace clashes and allow for re-executing the cell.)
-"""
-
 # ╔═╡ 44848686-8c0b-11eb-064c-7f56c697e69c
 md"""
 #### Training data
@@ -152,17 +145,35 @@ Load article-summary pairs from the CNN / Daily Mail dataset's train split.
 We can get a fresh `Channel` (iterator) with training data each time we call `cnndm_train()`.
 """
 
+# ╔═╡ 32af5d7e-8c0a-11eb-1784-17984db6e6fc
+cnndm_train() = cnndm_loader(train_type)
+
+# ╔═╡ 0d56f78e-8c0b-11eb-3d74-218c28817970
+first(cnndm_train())
+
 # ╔═╡ d4b77c36-8c0b-11eb-3a32-b3fc1b7e80af
 md"""
 #### Validation data
 Get a `Channel` of article-summary pairs from the dataset's development/validation split.
 """
 
+# ╔═╡ 2a4a03e0-8c0b-11eb-0bea-2d96d67712fc
+cnndm_dev() = cnndm_loader(dev_type)
+
+# ╔═╡ 3a4f4ce4-8c0b-11eb-3518-0907e3d2a62d
+first(cnndm_dev())
+
 # ╔═╡ 95b154c8-8c0b-11eb-293f-f15c59a529e8
 md"""
 #### Test data
 Get a `Channel` of article-summary pairs from the dataset's test split.
 """
+
+# ╔═╡ 1c697a62-8c0b-11eb-0814-0d02d802f6fc
+cnndm_test() = cnndm_loader(test_type)
+
+# ╔═╡ 395e445e-8c0b-11eb-0193-17ea21763de6
+first(cnndm_test())
 
 # ╔═╡ 6462ab2e-84e3-11eb-33dd-13e5000c78da
 md"Load preprocessed CNN/Dailymail data."
@@ -206,15 +217,22 @@ md"""
 ## Model
 """
 
-# ╔═╡ 2aeb3028-8c0e-11eb-3ef2-bd37d88ca3bf
-md"""
-Include model definition and components.
-"""
-
 # ╔═╡ aab3df80-8c0e-11eb-37bd-bd40e5a498c7
 md"""
 When debugging on smaller machines, use a tiny transformer encoder-decoder variant instead of the large BERT-based model.
 """
+
+# ╔═╡ 0cb47e48-8c0e-11eb-0a4d-8f1bd42be2b8
+function load_model()::Translator
+	if !DEBUG
+		BertAbs(bert_model, length(vocabulary)) |> gpu
+	else
+		TransformerAbsTiny(length(vocabulary)) |> gpu
+	end
+end
+
+# ╔═╡ e6db6ba4-8c0e-11eb-1bdb-3bc0b02e2b4f
+model = load_model()
 
 # ╔═╡ 3f4853dc-8c06-11eb-3a59-cdb9fc854879
 md"""
@@ -255,11 +273,42 @@ Calculate the model loss for given input, output, and ground truth token probabi
 If $\alpha > 0$, return Kullback-Leibler divergence between the model's predictions and smoothed ground truth labels. Otherwise cross entropy between predictions and unsmoothed ground truth.
 """
 
+# ╔═╡ 811777ce-8c0f-11eb-2ac4-b51b85cd6bc9
+function loss(
+    inputs::AbstractVector{String},
+    outputs::AbstractVector{String},
+    ground_truth::AbstractMatrix{<:Number},
+    translator::Translator
+)::AbstractFloat
+    prediction = translator.transformers(vocabulary, inputs, outputs)
+    loss = logtranslationloss(prediction, ground_truth, α=label_smoothing_α)
+    return loss
+end
+
 # ╔═╡ a46bcb12-8c11-11eb-0493-1505139bb2bf
 md"""
 ### Model parameters
 Parameters are separated for the encoder and the rest of the model (i.e., embeddings, decoder, and generator).
 This accounts for the former being pretrained while the latter have to be learned from scratch.
+"""
+
+# ╔═╡ 390e1432-8c12-11eb-2697-13d8f3c0e2bf
+parameters_encoder = params(model.transformers.encoder)
+
+# ╔═╡ 3ddf05d4-8c12-11eb-0a80-e50ef061dc33
+parameters_decoder = params(
+    model.transformers.embed, 
+    model.transformers.decoder, 
+    model.transformers.generator
+)
+
+# ╔═╡ ca3a1fe4-8c3c-11eb-243e-b58cc96b2d1d
+md"""
+We're going to tune
+$(params_count(parameters_encoder))
+parameters from the encoder and train 
+$(params_count(parameters_decoder))
+parameters for the decoder, embeddings, and generator from scratch.
 """
 
 # ╔═╡ bf061ff0-8c10-11eb-108d-cf008ae94342
@@ -275,11 +324,17 @@ Encoder schedule:
 $\eta = 2\mathcal{e}^{-3} \cdot \min(\text{step}^{-0.5},\ \text{step} \cdot 20\,000)$
 """
 
+# ╔═╡ 2c0590d8-8c11-11eb-1ac0-41a24f84ed58
+optimizer_encoder = WarmupADAM(2ℯ^(-3), 20_000, (0.9, 0.99)) |> gpu
+
 # ╔═╡ 940c2c58-8c11-11eb-39b6-cf4dc61bd550
 md"""
 Decoder schedule:
 $\eta = 0.1 \cdot \min(\text{step}^{-0.5},\ \text{step} \cdot 10\,000)$
 """
+
+# ╔═╡ 1cd3487e-8c11-11eb-173a-af13bddc850f
+optimizer_decoder = WarmupADAM(0.1, 10_000, (0.9, 0.99)) |> gpu
 
 # ╔═╡ 03a78c44-8c13-11eb-27da-e11097968bc7
 max_steps = !DEBUG ? 200_000 : 10
@@ -296,248 +351,27 @@ snapshot_steps = !DEBUG ? 2500 : 10
 # ╔═╡ 79b63cd0-8c1c-11eb-3b31-1395f64e979d
 start_time = now()
 
-# ╔═╡ be5c7b3c-8c16-11eb-1a3f-01eadf6bc1bb
-md"""
-Now train the model. Lean back and take a sip of coffee, as this takes a long while. ☕
-
-_Pro tip: If you've already trained the model, just set `TRAIN = false` and the evaluation will continue without training the model first._
-"""
-
-# ╔═╡ 4e3ead50-8c06-11eb-39ff-a3834ba819c2
-md"""
-## Evaluation
-"""
-
-# ╔═╡ 35878a0a-8c1c-11eb-0e18-d1964db60a67
-md"""
-### Configuration
-Define the training run we want to evaluate.
-"""
-
-# ╔═╡ 9bcff242-8c1d-11eb-007f-6b3ae5b2ef6a
-md"""
-When did the chosen model start training?
-"""
-
-# ╔═╡ 546c963e-8c1c-11eb-0762-cbecc179fdf0
-custom_start_time = DateTime(2021, 03, 22, 17, 50)
-
-# ╔═╡ 655f933a-8c1c-11eb-1fb0-636b021637b6
-eval_start_time = TRAIN ? start_time : custom_start_time
-
-# ╔═╡ 16441198-8c1e-11eb-05af-99619660cdd8
-md"""
-What was the rate at which snapshots were saved for that model?
-"""
-
-# ╔═╡ 87ceb29c-8c1d-11eb-2534-39649a087b4f
-custom_snapshot_steps = 2500
-
-# ╔═╡ bd5cde20-8c1d-11eb-25f4-c1d10590778a
-eval_snapshot_steps = TRAIN ? snapshot_steps : custom_snapshot_steps
-
-# ╔═╡ 216e718c-8c1c-11eb-066f-f705805cb70e
-md"""
-### Training loss
-Show loss on the training set at each iteration
-"""
-
-# ╔═╡ 16ccaf1a-8c2a-11eb-274a-5d8831732be1
-md"""
-### Best model selection
-Next, we'll select the best model by classification loss on the development/validation set.
-"""
-
-# ╔═╡ b3692f86-8c1b-11eb-3425-35027febcec0
-md"""
-#### Development data
-For evaluating loss on the development/validation set, we load its summary pairs.
-Loading and caching to the GPU might take a short moment.
-"""
-
-# ╔═╡ e2449708-8c06-11eb-0d09-991e4917b9d3
-md"""
-### Automatic evaluation
-"""
-
-# ╔═╡ 26d83e30-8c28-11eb-3107-a3df1788bc2f
-md"""
-#### Test data
-For evaluating quality on the test set, we load its summary pairs.
-Loading and caching to the GPU might take a short moment.
-"""
-
-# ╔═╡ a2ef84f2-8c07-11eb-0a94-21ebe1ed471a
-md"""
-#### ROUGE benchmark
-Measure ROUGE-1, ROUGE-2, and ROUGE-L on the summaries generated for the test dataset.
-"""
-
-# ╔═╡ f67d71ea-8c06-11eb-06a9-550a8d54c139
-md"""
-### Manual evaluation
-We generate summaries for the first 100 articles from the CNN / Daily Mail dataset's test split.
-These summaries are maually examined and scored on the following scale:
-- 0 = unreadable summary or unrelated to original article
-- 1 = readable and related to original article, some redundancy
-- 2 = captures exactly the article's main points, no redundancy
-"""
-
-# ╔═╡ da824c02-85e4-11eb-37c4-552a37e00739
-md"""
-## Utilities
-"""
-
-# ╔═╡ bee4c866-8c06-11eb-1728-c90b666bc20d
-md"""
-### Pluto notebook utilities
-"""
-
-# ╔═╡ e28f95aa-85e4-11eb-0334-d14173dd479e
-md"""
-Helper function to include files into the notebook similar to `include()`, 
-but the module is returned, so that we can use the included functions with a namespace
-and also notebook cells would update automatically.
-"""
-
-# ╔═╡ 92d6f834-85e2-11eb-261e-5da9f2c88300
-function ingredients(path::String) # See 
-	name = Symbol(basename(path))
-	m = Module(name)
-	Core.eval(m,
-        Expr(:toplevel,
-             :(eval(x) = $(Expr(:core, :eval))($name, x)),
-             :(include(x) = $(Expr(:top, :include))($name, x)),
-             :(include(mapexpr::Function, x) = $(Expr(:top, :include))(mapexpr, $name, x)),
-             :(include($path))))
-	m
-end;
-
-# ╔═╡ 2ca30702-8c08-11eb-31aa-b55c7ce561fb
-data = ingredients("data/datasets.jl");
-
-# ╔═╡ 32af5d7e-8c0a-11eb-1784-17984db6e6fc
-cnndm_train() = data.cnndm_loader(data.train_type)
-
-# ╔═╡ 0d56f78e-8c0b-11eb-3d74-218c28817970
-first(cnndm_train())
-
-# ╔═╡ 2a4a03e0-8c0b-11eb-0bea-2d96d67712fc
-cnndm_dev() = data.cnndm_loader(data.dev_type)
-
-# ╔═╡ 3a4f4ce4-8c0b-11eb-3518-0907e3d2a62d
-first(cnndm_dev())
-
-# ╔═╡ 97423bde-8c18-11eb-2b01-8526b32161d4
-dev_summaries = collect(cnndm_dev()) |> gpu
-
-# ╔═╡ 1c697a62-8c0b-11eb-0814-0d02d802f6fc
-cnndm_test() = data.cnndm_loader(data.test_type)
-
-# ╔═╡ 395e445e-8c0b-11eb-0193-17ea21763de6
-first(cnndm_test())
-
-# ╔═╡ 3e25c08a-8c28-11eb-143b-b996590c22d4
-test_summaries = collect(cnndm_test()) |> gpu
-
-# ╔═╡ 3c1128ce-8c0e-11eb-12e4-6d52c9d8c0ab
-models = ingredients("model/abstractive.jl");
-
-# ╔═╡ 0cb47e48-8c0e-11eb-0a4d-8f1bd42be2b8
-function load_model()::models.Translator
-	if !DEBUG
-		models.BertAbs(bert_model, length(vocabulary)) |> gpu
-	else
-		models.TransformerAbsTiny(length(vocabulary)) |> gpu
-	end
-end
-
-# ╔═╡ e6db6ba4-8c0e-11eb-1bdb-3bc0b02e2b4f
-model = load_model()
-
-# ╔═╡ 390e1432-8c12-11eb-2697-13d8f3c0e2bf
-parameters_encoder = params(model.transformers.encoder)
-
-# ╔═╡ 3ddf05d4-8c12-11eb-0a80-e50ef061dc33
-parameters_decoder = params(
-    model.transformers.embed, 
-    model.transformers.decoder, 
-    model.transformers.generator
-)
-
-# ╔═╡ a8bcd180-8c10-11eb-17fc-5f3dc5f516f8
-losses = ingredients("training/loss.jl");
-
-# ╔═╡ 811777ce-8c0f-11eb-2ac4-b51b85cd6bc9
-function loss(
-    inputs::AbstractVector{String},
-    outputs::AbstractVector{String},
-    ground_truth::AbstractMatrix{<:Number},
-    translator::models.Translator
-)::AbstractFloat
-    prediction = translator.transformers(vocabulary, inputs, outputs)
-    loss = losses.logtranslationloss(prediction, ground_truth, α=label_smoothing_α)
-    return loss
-end
-
-# ╔═╡ 40f5d3de-8c2a-11eb-2e1b-d39b430a6550
-function dev_loss(translator::models.Translator; agg=mean)::AbstractFloat
-    losses = []
-    for summary ∈ dev_summaries
-        inputs = summary.source |> preprocess |> gpu
-        outputs = summary.target |> preprocess |> gpu
-        ground_truth = onehot(vocabulary, outputs) |> gpu
-        loss = loss(inputs, outputs, ground_truth, translator)
-        push!(losses, loss)
-    end
-    return agg(losses)
-end
-
-# ╔═╡ 5f6dc8c0-8c12-11eb-23c7-dd764f265dbd
-model_utils = ingredients("model/utils.jl");
-
-# ╔═╡ 48ad16e2-8c12-11eb-0a9b-99f04e90d609
-md"""
-We're going to tune
-$(model_utils.params_count(parameters_encoder))
-parameters from the encoder and train 
-$(model_utils.params_count(parameters_decoder))
-parameters for the decoder, embeddings, and generator from scratch.
-"""
-
-# ╔═╡ 21da077c-8c11-11eb-0b94-45690ae9a74d
-optimizers = ingredients("training/optimizers.jl");
-
-# ╔═╡ 2c0590d8-8c11-11eb-1ac0-41a24f84ed58
-optimizer_encoder = optimizers.WarmupADAM(2ℯ^(-3), 20_000, (0.9, 0.99)) |> gpu
-
-# ╔═╡ 1cd3487e-8c11-11eb-173a-af13bddc850f
-optimizer_decoder = optimizers.WarmupADAM(0.1, 10_000, (0.9, 0.99)) |> gpu
-
-# ╔═╡ 7723f3a2-8c14-11eb-30c1-fd7e9f7c8f57
-data_utils = ingredients("data/utils.jl");
-
-# ╔═╡ 74917f70-8c13-11eb-3740-a7351fe64668
+# ╔═╡ ef68c91e-8c3c-11eb-393a-5145b8cff911
 md"""
 The actual training loop extracts tokens for each row's source and target text (original article vs. short summary).
 Then the loss between the model's predicted token probabilities and the ground truth probability is compared.
 The model is then updated with gradients for the encoder and gradients for decoder, embeddings, and generator.
 
 Losses are saved from every step and snapshots of the model and losses/optimizers for both parameter sets are saved in BSON format to the output folder:
-$(data_utils.out_dir())
+$(out_dir())
 """
 
 # ╔═╡ b4dbc124-8c15-11eb-009d-7b3e0a26ba4d
 function save_snapshot(
 		time::DateTime,
 		step::Int,
-		model::models.Translator,
-		optimizer_encoder::optimizers.WarmupADAM,
-		optimizer_decoder::optimizers.WarmupADAM,
+		model::Translator,
+		optimizer_encoder::WarmupADAM,
+		optimizer_decoder::WarmupADAM,
 		losses_encoder::AbstractVector{<:AbstractFloat},
 		losses_decoder::AbstractVector{<:AbstractFloat})
 	@info "Save model snapshot."
-	snapfile(time, step, name) = data_utils.snapshot_file(time, step, name)
+	snapfile(time, step, name) = snapshot_file(time, step, name)
 	@save snapfile(time, step, "model.bson") model
 	@save snapfile(time, step, "optimizer-encoder.bson") optimizer_encoder
 	@save snapfile(time, step, "optimizer-decoder.bson") optimizer_decoder
@@ -546,7 +380,7 @@ function save_snapshot(
 end
 
 # ╔═╡ 3f117812-8c13-11eb-3b34-3988290737a7
-function train!(model::models.Translator)
+function train!(model::Translator)
 	losses_encoder = []
 	losses_decoder = []
 	
@@ -591,20 +425,60 @@ function train!(model::models.Translator)
 	end
 end
 
+# ╔═╡ be5c7b3c-8c16-11eb-1a3f-01eadf6bc1bb
+md"""
+Now train the model. Lean back and take a sip of coffee, as this takes a long while. ☕
+
+_Pro tip: If you've already trained the model, just set `TRAIN = false` and the evaluation will continue without training the model first._
+"""
+
 # ╔═╡ ded97e7a-8c16-11eb-2b04-23a5dec4405e
 if TRAIN
 	train!(model)
 end
 
-# ╔═╡ d7e44134-8c06-11eb-150f-0b37210cff88
+# ╔═╡ 4e3ead50-8c06-11eb-39ff-a3834ba819c2
+md"""
+## Evaluation
+"""
+
+# ╔═╡ 35878a0a-8c1c-11eb-0e18-d1964db60a67
+md"""
+### Configuration
+Define the training run we want to evaluate.
+"""
+
+# ╔═╡ 9bcff242-8c1d-11eb-007f-6b3ae5b2ef6a
+md"""
+When did the chosen model start training?
+"""
+
+# ╔═╡ 546c963e-8c1c-11eb-0762-cbecc179fdf0
+custom_start_time = DateTime(2021, 03, 22, 17, 50)
+
+# ╔═╡ 655f933a-8c1c-11eb-1fb0-636b021637b6
+eval_start_time = TRAIN ? start_time : custom_start_time
+
+# ╔═╡ 16441198-8c1e-11eb-05af-99619660cdd8
+md"""
+What was the rate at which snapshots were saved for that model?
+"""
+
+# ╔═╡ 87ceb29c-8c1d-11eb-2534-39649a087b4f
+custom_snapshot_steps = 2500
+
+# ╔═╡ bd5cde20-8c1d-11eb-25f4-c1d10590778a
+eval_snapshot_steps = TRAIN ? snapshot_steps : custom_snapshot_steps
+
+# ╔═╡ 110108b4-8c3d-11eb-230e-f1f8ef3985ff
 md"""
 ### Model loading
 At this point we've either trained the model from the previous sections or copied pretrained training snapshots to the output folder:
-$(data_utils.out_dir())
+$(out_dir())
 """
 
 # ╔═╡ dc238b06-8c1d-11eb-3cf2-495db70ac90a
-model_snapshots, max_step = data_utils.snapshot_files(
+model_snapshots, max_step = snapshot_files(
 	eval_start_time,
 	eval_snapshot_steps,
 	"model.bson"
@@ -626,27 +500,14 @@ else
 	"""
 end
 
-# ╔═╡ 7cb9dfd2-8c2a-11eb-27ac-811c01ba9368
-function find_best_model(;agg=mean)::models.Translator
-    best_loss = Inf
-    local best_model
-    for snapshot ∈ model_snapshots
-        @info "Load model snapshot $snapshot."
-        model = model_utils.load_model(snapshot)
-        loss = dev_loss(model, agg=agg)
-        if loss < best_loss
-            best_loss = loss
-            best_model = model
-        end
-    end
-    return best_model
-end
-
-# ╔═╡ c33a3092-8c2a-11eb-03c3-d74e98a3867c
-best_model = find_best_model()
-
 # ╔═╡ 9fcbdd2e-8c21-11eb-0e59-63649715d380
-eval_snapshot_file(name) = data_utils.snapshot_file(eval_start_time, max_step, name)
+eval_snapshot_file(name) = snapshot_file(eval_start_time, max_step, name)
+
+# ╔═╡ 216e718c-8c1c-11eb-066f-f705805cb70e
+md"""
+### Training loss
+Show loss on the training set at each iteration
+"""
 
 # ╔═╡ 7e4da548-8c22-11eb-1b3c-81269c4f5f5a
 function plot_losses()
@@ -660,13 +521,92 @@ function plot_losses()
 	)
 	plot!(loss_plot, losses_encoder, label="encoder")
 	plot!(loss_plot, losses_decoder, label="dcoder, embeddings, generator")
-	savefig(loss_plot, joinpath(data_utils.out_dir(), "training-loss.pdf"))
-	savefig(loss_plot, joinpath(data_utils.out_dir(), "training-loss.png"))
+	savefig(loss_plot, joinpath(out_dir(), "training-loss.pdf"))
+	savefig(loss_plot, joinpath(out_dir(), "training-loss.png"))
 	loss_plot
 end;
 
 # ╔═╡ a39ba53e-8c22-11eb-04af-95d7d112f67d
 plot_losses()
+
+# ╔═╡ 16ccaf1a-8c2a-11eb-274a-5d8831732be1
+md"""
+### Best model selection
+Next, we'll select the best model by classification loss on the development/validation set.
+"""
+
+# ╔═╡ b3692f86-8c1b-11eb-3425-35027febcec0
+md"""
+#### Development data
+For evaluating loss on the development/validation set, we load its summary pairs.
+Loading and caching to the GPU might take a short moment.
+"""
+
+# ╔═╡ 97423bde-8c18-11eb-2b01-8526b32161d4
+dev_summaries = collect(cnndm_dev()) |> gpu
+
+# ╔═╡ 40f5d3de-8c2a-11eb-2e1b-d39b430a6550
+function dev_loss(translator::Translator; agg=mean)::AbstractFloat
+    losses = []
+    for summary ∈ dev_summaries
+        inputs = summary.source |> preprocess |> gpu
+        outputs = summary.target |> preprocess |> gpu
+        ground_truth = onehot(vocabulary, outputs) |> gpu
+        loss = loss(inputs, outputs, ground_truth, translator)
+        push!(losses, loss)
+    end
+    return agg(losses)
+end
+
+# ╔═╡ 7cb9dfd2-8c2a-11eb-27ac-811c01ba9368
+function find_best_model(;agg=mean)::Translator
+    best_loss = Inf
+    local best_model
+    for snapshot ∈ model_snapshots
+        @info "Load model snapshot $snapshot."
+		@load snapshot model
+        loss = dev_loss(model, agg=agg)
+        if loss < best_loss
+            best_loss = loss
+            best_model = model
+        end
+    end
+    return best_model
+end
+
+# ╔═╡ c33a3092-8c2a-11eb-03c3-d74e98a3867c
+best_model = find_best_model()
+
+# ╔═╡ e2449708-8c06-11eb-0d09-991e4917b9d3
+md"""
+### Automatic evaluation
+"""
+
+# ╔═╡ 26d83e30-8c28-11eb-3107-a3df1788bc2f
+md"""
+#### Test data
+For evaluating quality on the test set, we load its summary pairs.
+Loading and caching to the GPU might take a short moment.
+"""
+
+# ╔═╡ 3e25c08a-8c28-11eb-143b-b996590c22d4
+test_summaries = collect(cnndm_test()) |> gpu
+
+# ╔═╡ a2ef84f2-8c07-11eb-0a94-21ebe1ed471a
+md"""
+#### ROUGE benchmark
+Measure ROUGE-1, ROUGE-2, and ROUGE-L on the summaries generated for the test dataset.
+"""
+
+# ╔═╡ f67d71ea-8c06-11eb-06a9-550a8d54c139
+md"""
+### Manual evaluation
+We generate summaries for the first 100 articles from the CNN / Daily Mail dataset's test split.
+These summaries are maually examined and scored on the following scale:
+- 0 = unreadable summary or unrelated to original article
+- 1 = readable and related to original article, some redundancy
+- 2 = captures exactly the article's main points, no redundancy
+"""
 
 # ╔═╡ Cell order:
 # ╟─702d3820-84d9-11eb-1895-1d00242e5363
@@ -689,6 +629,7 @@ plot_losses()
 # ╠═30edfac8-8c18-11eb-1d59-a5042a177b20
 # ╠═923f88c6-8c24-11eb-0642-c1384a9262db
 # ╠═7442b326-8c19-11eb-3860-c5b115806a4e
+# ╠═2ca30702-8c08-11eb-31aa-b55c7ce561fb
 # ╟─1be31330-8c08-11eb-296f-6f5df8bf6e41
 # ╠═2646eafe-8c08-11eb-2a25-c338673a3d2a
 # ╟─dbc654f4-8c18-11eb-059e-f91749357883
@@ -696,12 +637,9 @@ plot_losses()
 # ╠═48c4e332-8c18-11eb-05c8-f15576c14fcb
 # ╠═493f6f90-8c26-11eb-0627-fb59af397184
 # ╟─22e29d1a-84e2-11eb-3e35-f7050cfd6cc4
-# ╠═38f9317a-84e2-11eb-117b-9f62916abd75
 # ╠═0d86a904-84e3-11eb-1c0c-9d37637c8420
 # ╠═29348670-84e4-11eb-076b-b78a92e94642
 # ╟─98474e70-8c06-11eb-28c4-35bd54c8a558
-# ╟─2e4da306-85d6-11eb-0957-1182af2f9302
-# ╠═2ca30702-8c08-11eb-31aa-b55c7ce561fb
 # ╟─44848686-8c0b-11eb-064c-7f56c697e69c
 # ╠═32af5d7e-8c0a-11eb-1784-17984db6e6fc
 # ╠═0d56f78e-8c0b-11eb-3d74-218c28817970
@@ -719,8 +657,6 @@ plot_losses()
 # ╠═58ae6888-8c0c-11eb-359c-ed1a2cafbfde
 # ╠═b1ac4c9e-8c0d-11eb-035a-4b075ffeb8f5
 # ╟─fc930278-8c0d-11eb-1c70-2176689ce05c
-# ╟─2aeb3028-8c0e-11eb-3ef2-bd37d88ca3bf
-# ╠═3c1128ce-8c0e-11eb-12e4-6d52c9d8c0ab
 # ╟─aab3df80-8c0e-11eb-37bd-bd40e5a498c7
 # ╠═0cb47e48-8c0e-11eb-0a4d-8f1bd42be2b8
 # ╠═e6db6ba4-8c0e-11eb-1bdb-3bc0b02e2b4f
@@ -728,7 +664,6 @@ plot_losses()
 # ╟─29f82622-8c0f-11eb-211b-1d275e80ebbf
 # ╠═0326189c-8c0f-11eb-38d1-595283980478
 # ╟─e1a94230-8c10-11eb-3a01-e765b58c2c29
-# ╠═a8bcd180-8c10-11eb-17fc-5f3dc5f516f8
 # ╟─5144a378-8c0f-11eb-3b32-6f7661781a0a
 # ╠═619a2256-8c08-11eb-3544-2b20fba8a71d
 # ╟─c8cf0d90-8c0f-11eb-3a11-4bded8f5be4f
@@ -736,10 +671,8 @@ plot_losses()
 # ╟─a46bcb12-8c11-11eb-0493-1505139bb2bf
 # ╠═390e1432-8c12-11eb-2697-13d8f3c0e2bf
 # ╠═3ddf05d4-8c12-11eb-0a80-e50ef061dc33
-# ╠═5f6dc8c0-8c12-11eb-23c7-dd764f265dbd
-# ╟─48ad16e2-8c12-11eb-0a9b-99f04e90d609
+# ╟─ca3a1fe4-8c3c-11eb-243e-b58cc96b2d1d
 # ╟─bf061ff0-8c10-11eb-108d-cf008ae94342
-# ╠═21da077c-8c11-11eb-0b94-45690ae9a74d
 # ╟─486cc03c-8c11-11eb-03cb-bb640ac822f5
 # ╠═2c0590d8-8c11-11eb-1ac0-41a24f84ed58
 # ╟─940c2c58-8c11-11eb-39b6-cf4dc61bd550
@@ -747,9 +680,8 @@ plot_losses()
 # ╟─d32d3994-8c12-11eb-1848-d9bd515709a5
 # ╠═03a78c44-8c13-11eb-27da-e11097968bc7
 # ╠═07e53e8e-8c13-11eb-1188-5309e353c56a
-# ╟─74917f70-8c13-11eb-3740-a7351fe64668
-# ╠═7723f3a2-8c14-11eb-30c1-fd7e9f7c8f57
 # ╠═79b63cd0-8c1c-11eb-3b31-1395f64e979d
+# ╟─ef68c91e-8c3c-11eb-393a-5145b8cff911
 # ╠═3f117812-8c13-11eb-3b34-3988290737a7
 # ╠═b4dbc124-8c15-11eb-009d-7b3e0a26ba4d
 # ╟─be5c7b3c-8c16-11eb-1a3f-01eadf6bc1bb
@@ -762,7 +694,7 @@ plot_losses()
 # ╟─16441198-8c1e-11eb-05af-99619660cdd8
 # ╠═87ceb29c-8c1d-11eb-2534-39649a087b4f
 # ╠═bd5cde20-8c1d-11eb-25f4-c1d10590778a
-# ╟─d7e44134-8c06-11eb-150f-0b37210cff88
+# ╟─110108b4-8c3d-11eb-230e-f1f8ef3985ff
 # ╠═dc238b06-8c1d-11eb-3cf2-495db70ac90a
 # ╟─873bb7ca-8c1e-11eb-08f7-755484003009
 # ╠═9fcbdd2e-8c21-11eb-0e59-63649715d380
@@ -780,7 +712,3 @@ plot_losses()
 # ╠═3e25c08a-8c28-11eb-143b-b996590c22d4
 # ╟─a2ef84f2-8c07-11eb-0a94-21ebe1ed471a
 # ╟─f67d71ea-8c06-11eb-06a9-550a8d54c139
-# ╟─da824c02-85e4-11eb-37c4-552a37e00739
-# ╟─bee4c866-8c06-11eb-1728-c90b666bc20d
-# ╟─e28f95aa-85e4-11eb-0334-d14173dd479e
-# ╠═92d6f834-85e2-11eb-261e-5da9f2c88300
