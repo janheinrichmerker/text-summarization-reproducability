@@ -3,6 +3,7 @@
 \usepackage{csquotes}
 \usepackage{listings}
 \usepackage[style=alphabetic]{biblatex}
+\usepackage{xspace}
 \geometry{
     a4paper,
     % vmargin=120pt,
@@ -30,8 +31,11 @@
 \addbibresource{../literature/literature.bib}
 \nocite{*} % TODO Remove before publishing.
 
+\newcommand{\Bert}{\textsc{Bert}\xspace}
+\newcommand{\BertAbs}{\textsc{BertAbs}\xspace}
+\newcommand{\TransformerAbs}{Transformer\textsc{Abs}\xspace}
 
-\newcommand{\todocite}{{\color{red}[TODO]}}
+\newcommand{\todocite}{{\color{red}[TODO]}\xspace}
 \newcommand{\todo}[1]{{\color{red}#1}}
 
 \begin{document}
