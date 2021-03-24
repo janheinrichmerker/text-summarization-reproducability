@@ -1,5 +1,4 @@
 using PyCall
-using Conda
 
 torch = pyimport_conda("torch", "pytorch")
 
