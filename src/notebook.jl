@@ -329,11 +329,18 @@ parameters_decoder = params(
 
 # ╔═╡ ca3a1fe4-8c3c-11eb-243e-b58cc96b2d1d
 md"""
-We're going to tune
+We're going to tune 
 $(params_count(parameters_encoder))
-parameters from the encoder and train 
+parameters from the pretrained encoder and train
 $(params_count(parameters_decoder))
-parameters for the decoder, embeddings, and generator from scratch.
+parameters for the non-pretrained model parts.
+(That is
+$(params_count(params(model.transformers.embed)))
+parameters from embeddings,
+$(params_count(params(model.transformers.decoder)))
+from the decoder, and
+$(params_count(params(model.transformers.generator)))
+from the generator.)
 """
 
 # ╔═╡ bf061ff0-8c10-11eb-108d-cf008ae94342
