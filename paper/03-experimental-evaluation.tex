@@ -1,14 +1,23 @@
 \section{Experimental Evaluation} % 70/300 points, 23%
 
-We fine-tune and evaluate the \BertSumAbs summarization model on a A100 GPU using the Flux~\cite{InnesSFGRJKPS2018} framework on Julia~\cite{BezansonEKS2017}.
-A smaller variant that we call \TransformerAbsTiny is trained on a GeForce MX150 for testing our evaluation workflow.
+We fine-tune and evaluate the \BertSumAbs summarization model from the reproduced paper by \citeauthor{LiuL2019} on a A100 GPU using the Flux framework on Julia~\cite{InnesSFGRJKPS2018,BezansonEKS2017,LiuL2019}.
+A scaled-down variant of their \TransformerAbs model, that we call \TransformerAbsTiny, is trained from scratch on a GeForce MX150 GPU for testing our evaluation workflow.
+We train both models using the CNN/Daily Mail datasets, but use the preprocessed variant by \citeauthor{LiuL2019} instead of the original data by \citeauthor{HermannKGEKSB2015}~\cite{LiuL2019,HermannKGEKSB2015}.
+Our implementation resembles the same encoder-decoder architecture as used by \citeauthor{LiuL2019} and uses the same \BertBase model as the pretrained encoder~\cite{LiuL2019,DevlinCLT2019}.
+Though, we do not tune any hyperparameters of either the model or the optimizers.
+We also reimplement the beam search algorithm from scratch.
+Due to instabilities in fine-tuning and hardware constraints we were unable to train the model for the full 200\,000 steps proposed by \citeauthor{LiuL2019}.
+We assume that the complex hyperparameter settings and large model size used in their paper are prone to fine-tuning issues like we experienced, a problem that has recently gained more attention~\cite{DodgeISFHS2020
+,ZhangWKWA2020,AghajanyanSGGZG2020}.
 
-Describe implementation structure/approach. (Julia/Flux, data loading (\Bert, CNN, Daily Mail), tokenization (\Bert), model structure (encoder-decoder, beam search), hyperparameter tuning, optimizer)
+
+Describe implementation structure/approach. (Julia/Flux, , tokenization (\Bert), model structure (encoder-decoder, beam search), hyperparameter tuning, optimizer)
 
 \subsection{Dataset}
 
 We train and evaluate the summarization model on the CNN / Daily Mail dataset~\cite{HermannKGEKSB2015}, but use preprocessed data released by \citeauthor{LiuL2019} along with the replicated paper.
-From this preprocessed data we extract the source article and the target summary as raw text, join sentences to normalize separators, and tokenize with \Bert's word piece tokenizer~\cite{DevlinCLT2019}.
+Our implementation is designed to automatically download both the pretrained \BertBase model and the preprocessed CNN/Daily Mail datasets from the Web, no manual downloads are needed.
+From the preprocessed data we extract the source article and the target summary as raw text, join sentences to normalize separators, and tokenize with \Bert's word piece tokenizer~\cite{DevlinCLT2019}.
 
 Describe raw data format.
 
