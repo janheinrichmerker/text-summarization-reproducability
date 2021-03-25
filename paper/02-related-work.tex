@@ -2,15 +2,35 @@
 
 
 
-Short summary of related/concurrent work that approaches the problem in a similar way (two or more papers).
-Describe first group of articles.
-Describe second group of articles.
 
 Short summary of works, methods, or techniques the replicated article is based on (two articles or more).
+
 Describe first group of articles.
+\citeauthor{DevlinCLT2019}: pretrained language model, based on multi-head attention~\cite{VaswaniSPUJGKP2017}, trained on a large corpus (3300M tokens), \Bert parameters jointly fine-tuned with task-specific parameters.
+\citeauthor{Edunov2019?,Rothe2019?}: use \Bert for generative tasks.
+
 Describe second group of articles.
+\citeauthor{Sutskever2014?,Chopra2016?,NallapatiZSGX2016}: neural encoder-decoder network as RNN.
+\citeauthor{NallapatiZSGX2016}: sequence-to-sequence modelling, first to use CNN/Daily Mail~\cite{HermannKGEKSB2015} for evaluating summarization quality~\cite{T5}, generator/pointer setting.
+\citeauthor{???}: abstractive summarization is a generative task similar to neural machine translation.
+
+
+
+Short summary of related/concurrent work that approaches the problem in a similar way (two or more papers).
+
+Describe first group of articles.
+\citeauthor{Paulus2018,SeeLM2017}: generative models sometimes produce unnatural, repetitive summaries.
+\citeauthor{Paulus2018}: attention over input and generated output, take into account what has already been generated (\Bert does that too with output transformers~\cite{DevlinCLT2019}?), uses teacher forcing.
+\citeauthor{SeeLM2017}: hybrid pointer-generator network with coverage to avoid repetition and factual errors.
+
+Describe second group of articles.
+\citeauthor{???}: other (larger) pretrained models used for abstractive summarization.
+
+
 
 Short description of the reproduced approach.
+\citeauthor{LiuL2019}: abstractive summarization as encoder-decoder generative approach, using pretrained \Bert encoder~\cite{DevlinCLT2019}, transformer decoder~\cite{VaswaniSPUJGKP2017}, custom trained position embeddings.
+
 Open details not covered completely in the replicated article.
 Which details can be explained and added by our reproduction.
 Explain those particular details.
