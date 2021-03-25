@@ -68,7 +68,7 @@ This is a reproducability study on the ["Text Summarization with Pretrained Enco
 """
 
 # ╔═╡ fc420da6-8cfc-11eb-1e05-b71010313c62
-TableOfContents(aside=false)
+TableOfContents()
 
 # ╔═╡ 176ccb48-8c08-11eb-3068-3b684ff378b5
 md"""
@@ -703,7 +703,7 @@ These summaries are maually examined and scored on the following scale:
 
 # ╔═╡ Cell order:
 # ╟─702d3820-84d9-11eb-1895-1d00242e5363
-# ╟─fc420da6-8cfc-11eb-1e05-b71010313c62
+# ╠═fc420da6-8cfc-11eb-1e05-b71010313c62
 # ╟─176ccb48-8c08-11eb-3068-3b684ff378b5
 # ╟─400c92b8-8c17-11eb-170d-1f6b3fe06a43
 # ╟─19fec164-8c43-11eb-3e55-1dc0c30bf8c1
