@@ -1,6 +1,9 @@
 \section{Related Work} % 80/300 points, 27%
 
-\todo{Why combine abstractive summarization methods and pretrained languag models?}
+In the reproduced article, \citeauthor{LiuL2019} use the encoder from the pretrained \Bert language model to build absractive text summarization model~\cite{LiuL2019,DevlinCLT2019}.
+While neural architectures have previously been used for abstractive summarization~\cite{NallapatiZSGX2016,SeeLM2017,Paulus2018}, it has been difficult to generate fluent yet informative summaries because those models can only model linguistics from limited training data~\todocite. Common benchmark datasets like the CNN/Daily Mail datasets for supervised learning contain far less data then the amount available for unsupervised pretraining of language models~\cite{HermannKGEKSB2015,DevlinCLT2019}.
+By fine-tuning a transformer encoder-decoder architecture with pretrained encoders~\cite{VaswaniSPUJGKP2017,DevlinCLT2019}, \citeauthor{LiuL2019} leverage broader linguistic knowledge from the pretrained language model for generating better summaries~\cite{LiuL2019}.
+As predicted in their article, now \todo{larger} language models are able to generate even better abstractive summaries~\todocite\cite{LiuL2019}.
 
 \subsection{Abstractive Summarization}
 
