@@ -1,20 +1,25 @@
 \section{Related Work} % 80/300 points, 27%
 
 In the reproduced article, \citeauthor{LiuL2019} use the encoder from the pretrained \Bert language model to build absractive text summarization model~\cite{LiuL2019,DevlinCLT2019}.
-While neural architectures have previously been used for abstractive summarization~\cite{NallapatiZSGX2016,SeeLM2017,PaulusXS2018}, it has been difficult to generate fluent yet informative summaries because those models can only model linguistics from limited training data~\todocite. Common benchmark datasets like the CNN/Daily Mail datasets for supervised learning contain far less data then the amount available for unsupervised pretraining of language models~\cite{HermannKGEKSB2015,DevlinCLT2019}.
+While neural architectures have previously been used for abstractive summarization~\cite{NallapatiZSGX2016,SeeLM2017,PaulusXS2018}, it has been difficult to generate fluent yet informative summaries because those models can only model linguistics from limited training data~\todocite.
+Common benchmark datasets like the CNN/Daily Mail datasets for supervised learning contain far less data then the amount available for unsupervised pretraining of language models~\cite{HermannKGEKSB2015,DevlinCLT2019}.
 By fine-tuning a transformer encoder-decoder architecture with pretrained encoders~\cite{VaswaniSPUJGKP2017,DevlinCLT2019}, \citeauthor{LiuL2019} leverage broader linguistic knowledge from the pretrained language model for generating better summaries~\cite{LiuL2019}.
 As predicted in their article, now \todo{larger} language models are able to generate even better abstractive summaries~\todocite\cite{LiuL2019}.
 
 \subsection{Abstractive Summarization}
 
 Abstractive text summarization is the process of generating a more compact representation of a text sequence's essential content while not having to copy from the source exactly~\cite[28]{Torres-Moreno2014}. Instead, the generated summary can have different style or include other vocabulary~\cite{NallapatiZSGX2016}.
+
 \citeauthor{NallapatiZSGX2016} were among the first to apply neural methods to abstractive summary generation in a sequence-to-sequence setting. They use an encoder-decoder recurrent neural network model that was originally developed for neural machine translation~\cite{https://arxiv.org/abs/1409.0473} but improve by letting the decoder decide between pointing to a word from the source text for copying or generating a new word~\cite{NallapatiZSGX2016}.
 Even though both machine translation and abstractive summarization both can be modelled as a sequence-to-sequence task, they are different in length of generated summaries/translations and their lossiness~\cite{NallapatiZSGX2016}.
-\citeauthor{NallapatiZSGX2016} also discovered that more diverse human summaries from the CNN/Daily Mail datasets are better suited for evaluating abstractive summarization with multiple sentences~\cite{NallapatiZSGX2016,HermannKGEKSB2015}.
 The pointer/generator approach~\cite{NallapatiZSGX2016} was later improved on by considering coverage, as \citeauthor{SeeLM2017} found that unconstrained sequence-to-sequence models tend to produce repetitive, unnatural summaries~\cite{SeeLM2017,PaulusXS2018}.
 \citeauthor{PaulusXS2018} take into account attention over input and generated output to avoid repetition~\cite{PaulusXS2018}.
 Similarly the \Bert model, pretrained in a next sentence prediction setting, encodes knowledge of previously generated words through multi-head attention layers in the transformer model~\cite{DevlinCLT2019}.
 Both approaches use teacher forcing during training~\cite{PaulusXS2018,DevlinCLT2019}.
+
+\citeauthor{NallapatiZSGX2016} also discovered that more diverse human summaries from the CNN/Daily Mail datasets are better suited for evaluating abstractive summarization with multiple sentences~\cite{NallapatiZSGX2016,HermannKGEKSB2015}.
+Given a benchmark dataset like the CNN/Daily Mail datasets, summarization quality is usually automtically measured using \Rouge~\cite{Lin2004}.
+Unigram overlap~(\RougeN{1}) and bigram overlap~(\RougeN{2}) with the target summary from the benchmark dataset indicate a generated summary's informativeness and the longest common subsequence~(\RougeL) can be used to assess fluency~\cite{LiuL2019}.
 
 \subsection{Summarization With Pretrained Language Models}
 
