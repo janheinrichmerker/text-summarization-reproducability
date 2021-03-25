@@ -22,7 +22,9 @@ For abstractive summarization, \Bert output embeddings are decoded using a trans
 Notably, the abstractive summarization model, which we reproduce in this report,
 follows an architecture very similar to neural machine translation and a neural machine translation toolkit is used in many parts of the \BertSumAbs implementation~\cite{KleinKDSR2017}.
 
-From the models proposed by \citeauthor{LiuL2019}, we choose the \BertSumAbs abstractive summarization model for our replication due to its promising trade-off between model complexity and performance in terms of \Rouge metrics on the CNN / Daily Mail datasets~\cite{LiuL2019,HermannKGEKSB2015}. The abstractive model also allows for more variation of the model's hyperparameters, e.g. changing the size or depth of the transformer decoder. 
+From the models proposed by \citeauthor{LiuL2019}, we choose the \BertSumAbs abstractive summarization model for our replication due to its promising trade-off between model complexity and performance in terms of \Rouge metrics on the CNN / Daily Mail datasets~\cite{LiuL2019,HermannKGEKSB2015}.
+Compared to previous approaches~\cite{SeeLM2017,PaulusXS2018}, it does not need copy or coverage~\cite{LiuL2019}
+Furthermore, the abstractive model also allows for more variation of the model's hyperparameters, e.g. changing the size or depth of the transformer decoder. 
 Even though the extractive model \BertSumExt outperforms previous approaches more  distinctly, it requires more complex preprocessing of input articles and the model changes aspects of \Bert's internals~\cite{LiuL2019}, requiring a separate, more detailed replication study.
 
 \citeauthor{LiuL2019} claim that the \BertSumAbs model outperforms many previous state-of-the-art summarizers in informativeness and fluency, measured using the \RougeN{1}, \RougeN{2}, and \RougeL metrics~\cite{LiuL2019,Lin2004}.
