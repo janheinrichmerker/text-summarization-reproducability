@@ -67,6 +67,9 @@ md"""
 This is a reproducability study on the ["Text Summarization with Pretrained Encoders"](https://doi.org/10.18653/v1/D19-1387) paper by Yang Liu and Mirella Lapata.
 """
 
+# ╔═╡ fc420da6-8cfc-11eb-1e05-b71010313c62
+TableOfContents(aside=false)
+
 # ╔═╡ 176ccb48-8c08-11eb-3068-3b684ff378b5
 md"""
 ## Setup
@@ -510,7 +513,9 @@ When did the chosen model start training?
 """
 
 # ╔═╡ 546c963e-8c1c-11eb-0762-cbecc179fdf0
-custom_start_time = DateTime(2021, 03, 24, 06, 06)
+# custom_start_time = DateTime(2021, 03, 24, 06, 06)
+# custom_start_time = DateTime(2021, 03, 22, 17, 50)
+custom_start_time = DateTime(2021, 03, 24, 12, 05)
 
 # ╔═╡ 655f933a-8c1c-11eb-1fb0-636b021637b6
 eval_start_time = TRAIN ? start_time : custom_start_time
@@ -521,7 +526,8 @@ What was the rate at which snapshots were saved for that model?
 """
 
 # ╔═╡ 87ceb29c-8c1d-11eb-2534-39649a087b4f
-custom_snapshot_steps = 10
+# custom_snapshot_steps = 10
+custom_snapshot_steps = 2500
 
 # ╔═╡ bd5cde20-8c1d-11eb-25f4-c1d10590778a
 eval_snapshot_steps = TRAIN ? snapshot_steps : custom_snapshot_steps
@@ -580,10 +586,10 @@ function plot_train_loss()
 		title = "Generator classification loss during training",
 		xlabel = "steps",
 		ylabel = "cross entropy loss",
-    	xticks = 0:eval_snapshot_steps:max_step,
+    	# xticks = 0:eval_snapshot_steps:max_step,
 	)
-	plot!(loss_plot, losses_encoder, label="encoder")
-	plot!(loss_plot, losses_decoder, label="decoder, embeddings, generator")
+	plot!(loss_plot, losses_encoder[1:100], label="encoder")
+	plot!(loss_plot, losses_decoder[1:100], label="decoder, embeddings, generator")
 	savefig(loss_plot, joinpath(out_dir(), "training-loss.pdf"))
 	savefig(loss_plot, joinpath(out_dir(), "training-loss.png"))
 	loss_plot
@@ -697,6 +703,7 @@ These summaries are maually examined and scored on the following scale:
 
 # ╔═╡ Cell order:
 # ╟─702d3820-84d9-11eb-1895-1d00242e5363
+# ╟─fc420da6-8cfc-11eb-1e05-b71010313c62
 # ╟─176ccb48-8c08-11eb-3068-3b684ff378b5
 # ╟─400c92b8-8c17-11eb-170d-1f6b3fe06a43
 # ╟─19fec164-8c43-11eb-3e55-1dc0c30bf8c1
@@ -776,7 +783,7 @@ These summaries are maually examined and scored on the following scale:
 # ╠═ded97e7a-8c16-11eb-2b04-23a5dec4405e
 # ╟─4e3ead50-8c06-11eb-39ff-a3834ba819c2
 # ╟─566a15e4-8c44-11eb-3d27-a1b28fc3057d
-# ╠═35878a0a-8c1c-11eb-0e18-d1964db60a67
+# ╟─35878a0a-8c1c-11eb-0e18-d1964db60a67
 # ╟─9bcff242-8c1d-11eb-007f-6b3ae5b2ef6a
 # ╠═546c963e-8c1c-11eb-0762-cbecc179fdf0
 # ╠═655f933a-8c1c-11eb-1fb0-636b021637b6
