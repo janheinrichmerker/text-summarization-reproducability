@@ -4,7 +4,7 @@ In the reproduced article, \citeauthor{LiuL2019} use the encoder from the pretra
 While neural architectures have already been used for abstractive summarization~\cite{NallapatiZSGX2016,SeeLM2017,PaulusXS2018}, it has been difficult to generate fluent yet informative summaries as the limited data available from benchmark datasets is often unsufficient for training deep neural networks~\cite{NallapatiZSGX2016}. Though, deep networks are required for modelling linguistics needed to abstract.
 Particularly, common benchmark datasets like the CNN/Daily Mail datasets for supervised learning contain far less data then the amount available for unsupervised pretraining of language models~\cite{HermannKGEKSB2015,DevlinCLT2019}.
 By fine-tuning a transformer encoder-decoder architecture with pretrained encoders~\cite{VaswaniSPUJGKP2017,DevlinCLT2019}, \citeauthor{LiuL2019} leverage broader linguistic knowledge from the pretrained language model for generating better summaries~\cite{LiuL2019}.
-As predicted in their article, now \todo{larger} language models are able to generate even better abstractive summaries~\todocite\cite{LiuL2019}.
+As predicted in their article, now more advanced language models, e.g., UniLM, are able to generate even better abstractive summaries~\cite{DongWWLWGZH2019,LiuL2019}.
 
 \subsection{Abstractive Summarization}
 
@@ -36,12 +36,12 @@ As the decoder transformer layers have to be learned from scratch, \citeauthor{L
 
 For evaluation, \citeauthor{LiuL2019} use \BertBase as encoder and tokenize words with \Bert's WordPiece tokenizer~\cite{LiuL2019}.
 The transformer decoder has 6~layers, each having 768~hidden units and a hidden size for the feed-forward layers of~2048. Dropout is applied before linear layers with probability~0.1.
-\citeauthor{LiuL2019} also smoothened ground truth labels (i.e., the one-hot probability of each token in the target summary) with a smoothing factor of~\(\alpha = 0.1\)~\cite{LiuL2019,SzegedyVISW2016}.
-The model is then trained for 200\,000 steps with gradient accumulation every 5 steps~\cite{LiuL2019}.
+\citeauthor{LiuL2019} also smoothened ground truth labels (i.e., the one-hot probability of each token in the target summary) with a smoothing factor of~\(\alpha_S = 0.1\)~\cite{LiuL2019,SzegedyVISW2016}.
+Their model is then trained for 200\,000 steps with gradient accumulation every 5 steps~\cite{LiuL2019}.
 During training, \citeauthor{LiuL2019} take snapshots every 2500 steps and afterwards select the best 3 snapshots based on evaluation loss on the validation set~\cite{LiuL2019}.
 Here it is ambiguous, whether the models classification loss or the final \Rouge metrics should be chosen. We decided to select based on classification loss for our replication.
 
-For generating the summary using the trained model, \citeauthor{LiuL2019} use beam search with a beam width of~5. They applied a length penalty~\cite{WuSCLNMKCGMKSJL2016} with~\(\alpha\) tuned from 0.6 to 1.0 on the validation set and block repeating trigrams~\cite{PaulusXS2018}.
-We set a fixed \(\alpha\) of~0.8 to simplify model evaluation.
+For generating the summary using the trained model, \citeauthor{LiuL2019} use beam search with a beam width of~5. They applied a length penalty~\cite{WuSCLNMKCGMKSJL2016} with~\(\alpha_L\) tuned from 0.6 to 1.0 on the validation set and block repeating trigrams~\cite{PaulusXS2018}.
+We set a fixed \(\alpha_L\) of~0.8 to simplify model evaluation.
 We believe that the large model size of \BertSumAbs and its complicated parameter settings can make fine tuning difficult~\cite{AghajanyanSGGZG2020} and unaffordable for institutions with a lower budget on computational resources~\cite{JiaoYSJCL0L2020}.
 Therefore, in our replication we aim to keep parameters fixed and/or at their default values.
