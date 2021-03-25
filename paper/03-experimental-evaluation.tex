@@ -16,6 +16,9 @@ Describe data preprocessing. (Pre-processed dataset from \citeauthor{LiuL2019}: 
 
 \subsection{Abstractive Summarizaion Model}
 
+Transformer with 6 layers, 768 hidden units, hidden size of 2048.
+Train for 200\,000 steps, snapshots every 2500 steps, gradient accumulation at every step.
+Choose the single best snapshot for evaluation.
 
 Describe simple tests/examples for checking implementation correctness. (Untrained model produces nonsense summaries.)
 
@@ -25,6 +28,12 @@ The full \BertSumAbs model contains 182M trainable parameters: 27M for embedding
 \subsection{Fine-tuning the pretrained model}
 
 Describe training schedule.
+Two Adam optimizers with~\(\beta_1 = 0.9\) and~\(\beta_2 = 0.999\).
+Learning rates:
+\begin{align}
+    \eta_E &= 2e^{-3} \cdot \min( \text{step}^{-0.5},\ \text{step} \cdot 20\,000^{-1.5} ) \\
+    \eta_D &= 0.1 \cdot \min( \text{step}^{-0.5},\ \text{step} \cdot 10\,000^{-1.5} )
+\end{align}
 
 Presumably because of the high number of parameters to tune, training this \BertSumAbs model on a A100 GPU uses about 40GB of memory at a speed of about 9 steps per minute.
 Because of the slow training speed even on a powerful GPU we had to cancel training the model after 22\,500 steps.
