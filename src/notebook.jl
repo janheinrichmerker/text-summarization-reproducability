@@ -682,6 +682,9 @@ test_summaries = collect(data_test()) |> gpu
 # ╔═╡ a5adebd0-8c6c-11eb-14af-019f37d78469
 test_source = test_summaries[1].source |> preprocess |> gpu
 
+# ╔═╡ aae5f0f0-8d02-11eb-2397-93f70ee24eb1
+model(test_source, vocabulary)
+
 # ╔═╡ ab6b0af8-8c62-11eb-02ad-d94033352713
 best_model(test_source, vocabulary)
 
@@ -810,6 +813,7 @@ These summaries are maually examined and scored on the following scale:
 # ╟─26d83e30-8c28-11eb-3107-a3df1788bc2f
 # ╠═3e25c08a-8c28-11eb-143b-b996590c22d4
 # ╠═a5adebd0-8c6c-11eb-14af-019f37d78469
+# ╠═aae5f0f0-8d02-11eb-2397-93f70ee24eb1
 # ╠═ab6b0af8-8c62-11eb-02ad-d94033352713
 # ╟─a2ef84f2-8c07-11eb-0a94-21ebe1ed471a
 # ╟─f67d71ea-8c06-11eb-06a9-550a8d54c139
