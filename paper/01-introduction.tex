@@ -6,7 +6,7 @@ For instance, it is hard to follow current news, if we would have to read each a
 Text summarization in general can be used to condense larger texts to its essential contents~\cite[xix]{Torres-Moreno2014}.
 Often software is used for automatic text summarization and in recent years
 automatic text summarization has become an important problem in natural language processing for information retrieval~\cite[xxi]{Torres-Moreno2014}.
-The task of text summarization can be divided into two main approaces: extractive and abstractive summarization. In extractive text summarization, the task is to extract most important sentences from the source text. In abstractive text summarization new text is generated which does not necessarily have to match parts of the source text~\cite[28]{Torres-Moreno2014}.
+The task of text summarization can be divided into two main approaces: extractive and abstractive summarization. In extractive text summarization, the task is to extract most important sentences from the source text. In abstractive text summarization new text is generated which does not necessarily have to match sequences of the source~\cite[28]{Torres-Moreno2014} nor its vocabulary~\cite{NallapatiZSGX2016}.
 Particularily, automatic abstractive summaries aim to be more comparable to summaries prouced by human~\cite[220]{Torres-Moreno2014}.
 
 Previous neural approaches to abstractive summarization are based on sequence-to-sequence modelling~\cite{NallapatiZSGX2016}, pointing to the source text~\cite{SeeLM2017}, or multiple communicating agents~\cite{CelikyilmazBHC2018}.
@@ -22,8 +22,8 @@ For abstractive summarization, \Bert output embeddings are decoded using a trans
 Notably, the abstractive summarization model, which we reproduce in this report,
 follows an architecture very similar to neural machine translation and a neural machine translation toolkit is used in many parts of the \BertSumAbs implementation~\cite{KleinKDSR2017}.
 
-From the models proposed by \citeauthor{LiuL2019}, we choose the \BertSumAbs abstractive summarization model for our replication due to its promising trade-off between model complexity and performance on \Rouge metrics. The abstractive model also allows for more variation of the model's hyperparameters, e.g. changing the size or depth of the transformer decoder. 
-Even though the extractive model \BertSumExt outperforms previous approaches more  distinctly, it requires more complex preprocessing of input articles and the model changes aspects of \Bert's internals, requiring a separate, more detailed replication study.
+From the models proposed by \citeauthor{LiuL2019}, we choose the \BertSumAbs abstractive summarization model for our replication due to its promising trade-off between model complexity and performance in terms of \Rouge metrics on the CNN / Daily Mail datasets~\cite{LiuL2019,HermannKGEKSB2015}. The abstractive model also allows for more variation of the model's hyperparameters, e.g. changing the size or depth of the transformer decoder. 
+Even though the extractive model \BertSumExt outperforms previous approaches more  distinctly, it requires more complex preprocessing of input articles and the model changes aspects of \Bert's internals~\cite{LiuL2019}, requiring a separate, more detailed replication study.
 
 \citeauthor{LiuL2019} claim that the \BertSumAbs model outperforms many previous state-of-the-art summarizers in informativeness and fluency, measured using the \RougeN{1}, \RougeN{2}, and \RougeL metrics~\cite{LiuL2019,Lin2004}.
 We expect similar scores with our re-implemented model, but due to the lack of hardware resources for training such a big neural model we are unable to compare final \Rouge scores.
