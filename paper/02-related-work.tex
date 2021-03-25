@@ -40,7 +40,8 @@ The transformer decoder has 6~layers, each having 768~hidden units and a hidden 
 The model is then trained for 200\,000 steps with gradient accumulation every 5 steps~\cite{LiuL2019}.
 During training, \citeauthor{LiuL2019} take snapshots every 2500 steps and afterwards select the best 3 snapshots based on evaluation loss on the validation set~\cite{LiuL2019}.
 Here it is ambiguous, whether the models classification loss or the final \Rouge metrics should be chosen. We decided to select based on classification loss for our replication.
+
 For generating the summary using the trained model, \citeauthor{LiuL2019} use beam search with a beam width of~5. They applied a length penalty~\cite{WuSCLNMKCGMKSJL2016} with~\(\alpha\) tuned from 0.6 to 1.0 on the validation set and block repeating trigrams~\cite{PaulusXS2018}.
 We set a fixed \(\alpha\) of~0.8 to simplify model evaluation.
-We believe that the large model size of \BertSumAbs and its complicated parameter settings can make fine tuning difficult and unaffordable for institutions with a lower budget on computational resources~\cite{JiaoYSJCL0L2020}.
+We believe that the large model size of \BertSumAbs and its complicated parameter settings can make fine tuning difficult~\cite{AghajanyanSGGZG2020} and unaffordable for institutions with a lower budget on computational resources~\cite{JiaoYSJCL0L2020}.
 Therefore, in our replication we aim to keep parameters fixed and/or at their default values.
