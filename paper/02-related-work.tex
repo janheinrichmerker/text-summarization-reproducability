@@ -1,8 +1,8 @@
 \section{Related Work} % 80/300 points, 27%
 
 In the reproduced article, \citeauthor{LiuL2019} use the encoder from the pretrained \Bert language model to build absractive text summarization model~\cite{LiuL2019,DevlinCLT2019}.
-While neural architectures have previously been used for abstractive summarization~\cite{NallapatiZSGX2016,SeeLM2017,PaulusXS2018}, it has been difficult to generate fluent yet informative summaries because those models can only model linguistics from limited training data~\todocite.
-Common benchmark datasets like the CNN/Daily Mail datasets for supervised learning contain far less data then the amount available for unsupervised pretraining of language models~\cite{HermannKGEKSB2015,DevlinCLT2019}.
+While neural architectures have already been used for abstractive summarization~\cite{NallapatiZSGX2016,SeeLM2017,PaulusXS2018}, it has been difficult to generate fluent yet informative summaries as the limited data available from benchmark datasets is often unsufficient for training deep neural networks~\cite{NallapatiZSGX2016}. Though, deep networks are required for modelling linguistics needed to abstract.
+Particularly, common benchmark datasets like the CNN/Daily Mail datasets for supervised learning contain far less data then the amount available for unsupervised pretraining of language models~\cite{HermannKGEKSB2015,DevlinCLT2019}.
 By fine-tuning a transformer encoder-decoder architecture with pretrained encoders~\cite{VaswaniSPUJGKP2017,DevlinCLT2019}, \citeauthor{LiuL2019} leverage broader linguistic knowledge from the pretrained language model for generating better summaries~\cite{LiuL2019}.
 As predicted in their article, now \todo{larger} language models are able to generate even better abstractive summaries~\todocite\cite{LiuL2019}.
 
@@ -23,17 +23,24 @@ Unigram overlap~(\RougeN{1}) and bigram overlap~(\RougeN{2}) with the target sum
 
 \subsection{Summarization With Pretrained Language Models}
 
-% Reproduced approach is based on:
-\citeauthor{DevlinCLT2019}: pretrained language model, based on multi-head attention~\cite{VaswaniSPUJGKP2017}, trained on a large corpus (3300M tokens), \Bert parameters jointly fine-tuned with task-specific parameters.
-\citeauthor{Edunov2019?,Rothe2019?}: use \Bert for generative tasks.
+Pretrained language models like \Elmo, \Gpt or \Bert are motivated by dividing natural language processing tasks into two steps: unsupervised pretraining and task specific, supervised fine-tuning~\cite{PetersNIGCLZ2018,RadfordNSS2018,DevlinCLT2019}.
+With this two step approach, language models can be pretrained unsupervised on large corpora and must only be fine-tuned supervised on a small dataset~\cite{DevlinCLT2019}.
+For instance the \BertBase model as used by \citeauthor{LiuL2019} was trained on a corpus containing 3300M tokens.
+When adapting \Bert for a natural language processing task, its parameters are usually jointly fine-tuned with task specific model parameters~\cite{DevlinCLT2019,LiuL2019}.
 
-% Reproduced approach:
-\citeauthor{LiuL2019}: abstractive summarization as encoder-decoder generative approach, using pretrained \Bert encoder~\cite{DevlinCLT2019}, transformer decoder~\cite{VaswaniSPUJGKP2017}, custom trained position embeddings.
-Open details not covered completely in the replicated article.
-Which details can be explained and added by our reproduction.
-Explain those particular details.
-Which principles, ideas, or assumptions are used or made in the replicated approach?
+While pretrained \Elmo embeddings have been used to achieve state-of-the-art results in abstractive summarization~\cite{EdunovBA2019}, that approach did not use bidirectional context like from \Bert embeddings. 
+\citeauthor{LiuL2019} complement the pretrained \Bert encoder with a transformer decoder consisting of several multi-head attention layers~\cite{LiuL2019,DevlinCLT2019,VaswaniSPUJGKP2017}, following the same encoder-decoder design as \textcite{SeeLM2017}. Their new model is named \BertSumAbs~\cite{LiuL2019}.
 
-% Other approaches:
-\citeauthor{???}: other (larger) pretrained models used for abstractive summarization.
-BART, BART+R3F, ERNIE-GENLARGE?
+\citeauthor{LiuL2019} overcome \Bert's position embedding length limit by introducing more trained position embeddings~\cite{LiuL2019}. Though, it is not clear if and in what positions those new embeddings are added to \Bert embeddings, or if the new embeddings replace \Bert embeddings entirely. For simplicity, we assume that new embeddings replace \Bert embeddings.
+As the decoder transformer layers have to be learned from scratch, \citeauthor{LiuL2019} propose a fine-tuning schedule with separate learning rates for Adam optimizers for the pretrained \Bert encoder and the newly trained decoder: the encoder is trained slower with more warmup steps, the decoder is trained faster with less warmup steps~\cite{LiuL2019}.
+
+For evaluation, \citeauthor{LiuL2019} use \BertBase as encoder and tokenize words with \Bert's WordPiece tokenizer~\cite{LiuL2019}.
+The transformer decoder has 6~layers, each having 768~hidden units and a hidden size for the feed-forward layers of~2048. Dropout is applied before linear layers with probability~0.1.
+\citeauthor{LiuL2019} also smoothened ground truth labels (i.e., the one-hot probability of each token in the target summary) with a smoothing factor of~\(\alpha = 0.1\)~\cite{LiuL2019,SzegedyVISW2016}.
+The model is then trained for 200\,000 steps with gradient accumulation every 5 steps~\cite{LiuL2019}.
+During training, \citeauthor{LiuL2019} take snapshots every 2500 steps and afterwards select the best 3 snapshots based on evaluation loss on the validation set~\cite{LiuL2019}.
+Here it is ambiguous, whether the models classification loss or the final \Rouge metrics should be chosen. We decided to select based on classification loss for our replication.
+For generating the summary using the trained model, \citeauthor{LiuL2019} use beam search with a beam width of~5. They applied a length penalty~\cite{WuSCLNMKCGMKSJL2016} with~\(\alpha\) tuned from 0.6 to 1.0 on the validation set and block repeating trigrams~\cite{PaulusXS2018}.
+We set a fixed \(\alpha\) of~0.8 to simplify model evaluation.
+We believe that the large model size of \BertSumAbs and its complicated parameter settings can make fine tuning difficult and unaffordable for institutions with a lower budget on computational resources~\cite{JiaoYSJCL0L2020}.
+Therefore, in our replication we aim to keep parameters fixed and/or at their default values.
