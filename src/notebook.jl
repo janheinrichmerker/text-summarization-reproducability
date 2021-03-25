@@ -13,6 +13,9 @@ macro bind(def, element)
     end
 end
 
+# ╔═╡ 74207314-8c47-11eb-0989-f3dab6bcffd2
+using PlutoUI
+
 # ╔═╡ 2f26e06e-8c08-11eb-18c0-2f8e5b0cf47a
 using CUDA
 
@@ -42,9 +45,6 @@ using Dates
 
 # ╔═╡ 2ed19a74-8c18-11eb-0c06-95c930bbc8c1
 using Statistics
-
-# ╔═╡ 74207314-8c47-11eb-0989-f3dab6bcffd2
-using PlutoUI
 
 # ╔═╡ 30edfac8-8c18-11eb-1d59-a5042a177b20
 using Plots
@@ -712,6 +712,7 @@ These summaries are maually examined and scored on the following scale:
 # ╟─19fec164-8c43-11eb-3e55-1dc0c30bf8c1
 # ╟─6847039e-8c17-11eb-15b9-e70a268a56fb
 # ╟─3351b1ca-8c08-11eb-14c3-8f61900721f4
+# ╠═74207314-8c47-11eb-0989-f3dab6bcffd2
 # ╠═2f26e06e-8c08-11eb-18c0-2f8e5b0cf47a
 # ╠═590fdac2-8c08-11eb-1c42-93ff500817c1
 # ╠═4068759c-8c08-11eb-1d2f-d79efe98c2b0
@@ -722,7 +723,6 @@ These summaries are maually examined and scored on the following scale:
 # ╠═98c4351e-8c08-11eb-14fe-7df792e4b7cf
 # ╠═44df9b3a-8c16-11eb-17a7-3d6038911fc5
 # ╠═2ed19a74-8c18-11eb-0c06-95c930bbc8c1
-# ╠═74207314-8c47-11eb-0989-f3dab6bcffd2
 # ╠═30edfac8-8c18-11eb-1d59-a5042a177b20
 # ╠═06f8595a-8c42-11eb-3b1c-011d0706850e
 # ╠═998b0178-8c60-11eb-2804-190b910dc7d8

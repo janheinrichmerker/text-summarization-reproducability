@@ -27,7 +27,8 @@ function TransformerAbs(vocab_size::Integer)::Translator
     return Translator(
         TransformersModel(
             AbsEmbed(768, vocab_size),
-            768, 8, 96, 2048, 6, 
+            # FIXME The paper mentions a hidden size of 512.
+            768, 8, 96, 2048, 6,
             vocab_size, 
             pdrop=0.1,
         ),
