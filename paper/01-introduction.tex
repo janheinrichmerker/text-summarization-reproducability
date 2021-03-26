@@ -1,30 +1,30 @@
 \section{Introduction} % 50/300 points, 17%
 
-The Web enables access to huge amounts of textual data, e.g., news articles.
+The Web enables access to huge amounts of textual data, like news articles.
 However, most web documents are unstructured and thus difficult to analyze.
-For instance, it is hard to follow current news, if we would have to read each article entirely.
+For instance, it is hard to follow current news events, if we would have to read each article entirely.
 Text summarization in general can be used to condense larger texts to its essential contents~\cite[xix]{Torres-Moreno2014}.
 Often software is used for automatic text summarization and in recent years
-automatic text summarization has become an important problem in natural language processing for information retrieval~\cite[xxi]{Torres-Moreno2014}.
+automatic text summarization has become an important problem in natural language processing for information retrieval~\cite[xxi]{Torres-Moreno2014}, often tackled by deep neural networks~\cite{CelikyilmazBHC2018,LiuL2019,NallapatiZSGX2016,PaulusXS2018,SeeLM2017}.
 The task of text summarization can be divided into two main approaces: extractive and abstractive summarization. In extractive text summarization, the task is to extract most important sentences from the source text. In abstractive text summarization new text is generated which does not necessarily have to match sequences of the source~\cite[28]{Torres-Moreno2014} nor its vocabulary~\cite{NallapatiZSGX2016}.
-Particularily, automatic abstractive summaries aim to be more comparable to summaries prouced by human~\cite[220]{Torres-Moreno2014}.
+Particularily, abstractive summaries generated automatically aim to be more comparable to summaries prouced by human~\cite[220]{Torres-Moreno2014}.
 
-Previous neural approaches to abstractive summarization are based on sequence-to-sequence modelling~\cite{NallapatiZSGX2016}, pointing to the source text~\cite{SeeLM2017}, or multiple communicating agents~\cite{CelikyilmazBHC2018}.
+Previous neural approaches to abstractive summarization are based on sequence-to-sequence modelling~\cite{NallapatiZSGX2016}, pointing to the source text~\cite{SeeLM2017}, or communicating agents~\cite{CelikyilmazBHC2018}.
 Though, the limited amount of training data in benchmark datasets suited for abstractive summarization makes it difficult to train deeper neural networks.
 For example, the articles from the CNN and Daily Mail datasets contain only 242M~tokens of text, that could be used for training an abstraction model~\cite{HermannKGEKSB2015}.
 With the availability of large pretrained language models like \Elmo~\cite{PetersNIGCLZ2018} and \Bert~\cite{DevlinCLT2019} it is often more efficient to fine-tune a pretrained language model, that already encodes semantics of a language~\cite{LiuL2019}.
 The \Bert model, for instance, was trained on 3300M~tokens~\cite{DevlinCLT2019}, more than 10~times the training data available from the CNN or Daily Mail datasets.
-Apart from the advantages of higher amounts of training data, a pretrained language model could also reduce learning cost, as models building upon a pretrained model only have to be fine-tuned, not trained from scratch.
+Apart from the advantages of higher amounts of training data, a pretrained language model could also potentially reduce learning cost, as models building upon a pretrained model only have to be fine-tuned, not trained from scratch~\cite{DevlinCLT2019}.
 
 \citeauthor{LiuL2019} propose two new approaches to text summarization that leverage a pretrained \Bert model: a sentence classification architecture for extractive summarization~(\BertSumExt) and an encoder-deoder framework for abstractive summarization~(\BertSumAbs)~\cite{LiuL2019}.
 In both tasks, the source text is encoded with pretrained \Bert transformers. Then for extractive summarization, sentence sequences from the \Bert encoder are again transformed and then classified whether they should be included in the summary.
 For abstractive summarization, \Bert output embeddings are decoded using a transformer decoder and a linear layer is used to map embeddings back to the input vocabulary~\cite{LiuL2019}. In both cases, the \Bert encoder is jointly fine-tuned with input emeddings, classfier and/or decoder layers.
 Notably, the abstractive summarization model, which we reproduce in this report,
-follows an architecture very similar to neural machine translation and a neural machine translation toolkit is used in many parts of the \BertSumAbs implementation~\cite{KleinKDSR2017}.
+follows an architecture very similar to neural machine translation and a neural machine translation toolkit is used in many parts of the \BertSumAbs implementation~\cite{LiuL2019,KleinKDSR2017}.
 
-From the models proposed by \citeauthor{LiuL2019}, we choose the \BertSumAbs abstractive summarization model for our replication due to its promising trade-off between model complexity and performance in terms of \Rouge metrics on the CNN / Daily Mail datasets~\cite{LiuL2019,HermannKGEKSB2015}.
-Compared to previous approaches~\cite{SeeLM2017,PaulusXS2018}, it does not need copy or coverage~\cite{LiuL2019}
-Furthermore, the abstractive model also allows for more variation of the model's hyperparameters, e.g. changing the size or depth of the transformer decoder. 
+From the models proposed by \citeauthor{LiuL2019}, we choose the \BertSumAbs abstractive summarization model for our replication due to its promising trade-off between model complexity and performance in terms of \Rouge metrics on the \CnnDailyMail datasets~\cite{LiuL2019,HermannKGEKSB2015}.
+Compared to previous neural approaches~\cite{SeeLM2017,PaulusXS2018}, it does not need copy nor coverage~\cite{LiuL2019}
+Furthermore, the abstractive model also allows for more variation of the model's hyperparameters, e.g. changing the depth or width of the decoder's transformer layers. 
 Even though the extractive model \BertSumExt outperforms previous approaches more  distinctly, it requires more complex preprocessing of input articles and the model changes aspects of \Bert's internals~\cite{LiuL2019}, requiring a separate, more detailed replication study.
 
 \citeauthor{LiuL2019} claim that the \BertSumAbs model outperforms many previous state-of-the-art summarizers in informativeness and fluency, measured using the \RougeN{1}, \RougeN{2}, and \RougeL metrics~\cite{LiuL2019,Lin2004}.
