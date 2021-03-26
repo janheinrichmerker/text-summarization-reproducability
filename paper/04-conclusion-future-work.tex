@@ -1,17 +1,17 @@
 \section{Conclusion and Future Work} % 30/300 points, 10%
 
 We fail to reproduce the results from \citeauthor{LiuL2019} on abstractive summarization using the \BertSumAbs model and identify two main causes:
-First, the complex model and hyperparameter settings including the use of two separate, customized Adam optimizers for the pretrained \Bert encoder and the randomly initialized decoder can lead to instability during training, as has recently been argued in literature~\cite{ZhangWKWA2020}. 
-Second, the model, with 182M~trainable parameters, is very large and thus it is difficult to train unless having access to expendive high-performance hardware. 
-We question both the social impact and the environmental implications of using high computational power for minor improvements on a single task.
+First, the complex model and hyperparameter settings, particularly the use of two separate, customized Adam optimizers for the pretrained \Bert encoder and the randomly initialized decoder can lead to instability during training, as has recently been argued similarly in literature~\cite{ZhangWKWA2020}. 
+Second, the model, with 182M~trainable parameters, is very large and thus it is difficult to train unless having access to expensive high-performance hardware like Cloud TPUs. 
+We question both the social impact and the environmental implications of using such high computational power for minor improvements on a single task.
 Even though we cannot confirm the exact causes for the instability in training that we observed, we argue that fine-tuning \Bert is not as straight-forward as \citeauthor{LiuL2019} propose.
-We expect regularizaion to have a positive effect on the fine-tuning and that is probably easier to implement than the complicated two optimizers setting.
+We expect regularizaion to have a positive effect on the fine-tuning, which is probably also easier to implement than the complex two-optimizers setting.
 
 \subsection{Future Work}
 
 Recently the much larger GPT-3 language model has been introduced. It does require no fine-tuning but instead can be used in a few-shot setting by simple instructions~\cite{BrownMRSKDNSSAA2020}.
 We wonder if the GPT-3 model could also be successfully applied to abstractive summarization.
-On the other hand, smaller models of the \Bert architecture, optimized for more constrainted environments~\cite{TurcCLT2019}.
-If used in a similar architecture as proposed by \citeauthor{LiuL2019} for the \BertSumAbs model, we wonder if comparable results on the \Rouge benchmark could also be achieved with \BertTiny used as encoder.
+On the other hand, smaller models of the \Bert architecture emerge that are optimized for more constrainted environments~\cite{TurcCLT2019}.
+If used in a similar architecture as proposed by \citeauthor{LiuL2019} for the \BertSumAbs model, we wonder if comparable results on the \Rouge benchmark could also be achieved with \BertTiny used as encoder~\cite{TurcCLT2019}.
 As we could not successfully train the \BertSumAbs model, we were also unable to tune hyperparameters for the transformer decoder, an evaluation that is missing from the replicated paper~\cite{LiuL2019}.
 With smaller models being more easily trainable, a study of varying model depth and width is an interesting direction for future research.
