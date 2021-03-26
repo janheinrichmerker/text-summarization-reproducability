@@ -11,9 +11,9 @@ Particularily, abstractive summaries generated automatically aim to be more comp
 
 Previous neural approaches to abstractive summarization are based on sequence-to-sequence modelling~\cite{NallapatiZSGX2016}, pointing to the source text~\cite{SeeLM2017}, or communicating agents~\cite{CelikyilmazBHC2018}.
 Though, the limited amount of training data in benchmark datasets suited for abstractive summarization makes it difficult to train deeper neural networks.
-For example, the articles from the CNN and Daily Mail datasets contain only 242M~tokens of text, that could be used for training an abstraction model~\cite{HermannKGEKSB2015}.
+For example, the articles from the \CnnDailyMail datasets contain only 242M~words of text, that could be used for training an abstraction model~\cite{HermannKGEKSB2015}.
 With the availability of large pretrained language models like \Elmo~\cite{PetersNIGCLZ2018} and \Bert~\cite{DevlinCLT2019} it is often more efficient to fine-tune a pretrained language model, that already encodes semantics of a language~\cite{LiuL2019}.
-The \Bert model, for instance, was trained on 3300M~tokens~\cite{DevlinCLT2019}, more than 10~times the training data available from the CNN or Daily Mail datasets.
+The \Bert model, for instance, was trained on 3300M~words~\cite{DevlinCLT2019}, more than 10~times the training data available from the \CnnDailyMail datasets.
 Apart from the advantages of higher amounts of training data, a pretrained language model could also potentially reduce learning cost, as models building upon a pretrained model only have to be fine-tuned, not trained from scratch~\cite{DevlinCLT2019}.
 
 \citeauthor{LiuL2019} propose two new approaches to text summarization that leverage a pretrained \Bert model: a sentence classification architecture for extractive summarization~(\BertSumExt) and an encoder-deoder framework for abstractive summarization~(\BertSumAbs)~\cite{LiuL2019}.
