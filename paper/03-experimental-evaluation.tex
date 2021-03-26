@@ -3,9 +3,9 @@
 We fine-tune and evaluate the \BertSumAbs summarization model from the reproduced paper by \citeauthor{LiuL2019} on a A100 GPU using the Flux framework on Julia~\cite{InnesSFGRJKPS2018,BezansonEKS2017,LiuL2019}.
 A scaled-down variant of their \TransformerAbs model, that we call \TransformerAbsTiny, is trained from scratch on a GeForce MX150 GPU for testing our evaluation workflow.
 We train both models using the CNN/Daily Mail datasets, but use the preprocessed variant by \citeauthor{LiuL2019} instead of the original data by \citeauthor{HermannKGEKSB2015}~\cite{LiuL2019,HermannKGEKSB2015}.
-Our implementation resembles the same encoder-decoder architecture as used by \citeauthor{LiuL2019}, uses the same \BertBase model for the pretrained encoder, and \Bert's WordPiece tokenizer to transform raw text into tokens that can be embedded~\cite{LiuL2019,DevlinCLT2019}.
+Our implementation resembles the same encoder-decoder architecture as used by \citeauthor{LiuL2019}, uses the same \BertBase model for the pretrained encoder, and \Bert's WordPiece tokenizer to transform raw text into embeddable tokens~\cite{LiuL2019,DevlinCLT2019}.
 Though, we do not tune any hyperparameters of either the model or the optimizers.
-We also reimplement the beam search algorithm from scratch.
+We also reimplement the beam search algorithm.
 Due to instabilities in fine-tuning and hardware constraints we were unable to train the model for the full 200\,000 steps proposed by \citeauthor{LiuL2019}~\cite{LiuL2019}.
 We assume that the complex hyperparameter settings and large model size used in their paper are prone to fine-tuning issues like we experienced, a problem that has only recently gained more attention~\cite{DodgeISFHS2020,ZhangWKWA2020,AghajanyanSGGZG2020}.
 
@@ -16,11 +16,11 @@ We train and evaluate the summarization model on the CNN/Daily Mail benchmark da
 Our implementation is designed to automatically download those preprocessed CNN/Daily Mail datasets from the Web\footnote{\url{https://drive.google.com/open?id=1DN7ClZCCXsk2KegmC6t4ClBwtAf5galI}}, no manual downloads are needed.
 
 Even though \citeauthor{LiuL2019} claim to truncate input sequences after 512 tokens, we observe sequences longer than 512 tokens in the preprocessed data~\cite{LiuL2019}.
-We use the opportunity to not truncate input sequences, because we find that truncating after only 512 discards a reasonable amount~(33\,\% on average) of context from the news articles~\cite{NallapatiZSGX2016}.\footnote{We believe that especially the last sentences of a news article are relevant for drawing the right conclusion in a summary.}
-From the preprocessed data we extract pairs of each source article with its target summary, normalize sentence separators, and tokenize with \Bert's WordPiece tokenizer~\cite{DevlinCLT2019}.
+We use the opportunity to not truncate input sequences, because we find that truncating after only 512 tokens discards a reasonable amount~(33\,\% on average) of context from the news articles~\cite{NallapatiZSGX2016}.\footnote{Arguably, especially the last sentences of a news article can be important to draw the right conclusion in a summary.}
+From the preprocessed data we extract pairs of each source article with its target summary, normalize sentence separators, and tokenize with \Bert's \WordPiece tokenizer~\cite{DevlinCLT2019}.
 
 Like \citeauthor{LiuL2019}, we use the \BertBase model, pretrained by \citeauthor{DevlinCLT2019}, as encoder~\cite{DevlinCLT2019}.
-That \Bert model is also automtically downloaded from the Web along with its WordPiece tokenizer.\footnote{\BertBase is loaded using the Transformers library: \url{https://github.com/chengchingwen/Transformers.jl}}
+That \Bert model is also automtically downloaded from the Web along with its \WordPiece tokenizer.\footnote{\Bert is loaded by the Transformers library: \url{https://github.com/chengchingwen/Transformers.jl}}
 
 \subsection{Abstractive Summarizaion Model}
 
@@ -49,9 +49,9 @@ Unfortunately, on our hardware (using an A100 GPU) we were unable to train the m
 \input{figures/training-loss-bert-abs.tex}
 Figure~\ref{training-loss-bert-abs} shows that the loss when training \BertSumAbs quickly begins to oscillate after ony 25 steps. The oscillation continues to the end of training.
 \citeauthor{ZhangWKWA2020} suggest that changes in the optimizer can in some cases cause instabilities in the fine-tuning process~\cite{ZhangWKWA2020}.
-Given that the \Bert encoder and transformer decoder of the \BertSumAbs model are trained with custom learning rates and Adam optimizers, we ask whether these complex hyperparameter settings are causing fine-tuning issues.
+Given that the \Bert encoder and transformer decoder of the \BertSumAbs model are trained with custom learning rates and Adam optimizers, we ask whether these complex hyperparameter settings are causing the observed fine-tuning issues.
 A more detailed analysis has to be conducted to test if the issues can be circumvented by training with different random seeds~\cite{DodgeISFHS2020}.
-But new approaches that also fine-tune pretrained language models for abstractive summarization suggest an improvement by using trust regions~\cite{AghajanyanSGGZG2020}.
+New approaches also fine-tuning pretrained language models for abstractive summarization suggest an improvement by using trust regions~\cite{AghajanyanSGGZG2020}.
 It is also notable that training the \BertSumAbs model on the A100 GPU used about 40GB of memory at a speed of about 9 steps per minute.
 Though the memory usage is comparable to the memory usage reported by \citeauthor{LiuL2019}~\cite{LiuL2019}.
 \input{figures/training-loss-transformer-abs.tex}
@@ -61,14 +61,17 @@ The small \TransformerAbsTiny model was only trained on the less powerful GeForc
 
 In addition to the transformer encoder-decoder model, we also reimplement the beam search algorithm with parameters used by \citeauthor{LiuL2019}.
 In each iteration of the beam search algorithm we keep track of the best \(n\)~sequences based on a scoring function~\(s\).
-Here, \(n\)~denotes the beam width and \(s\) is usually based on the probability~\(p(x_1,\ldots,x_n)\) of each sequence \(\mathbf{x} = [x_1,\ldots,x_n]\).
-We start with the empty sequence and subsequently expand with a new token from the vocabulary, until we either see the end-of-sequence token or hit a configurable maximum length.
-The probability for new sequence \(\mathbf{\hat x} = [x_1,\ldots,x_{n+1}]\) with the new token \(x_{n+1}\) is then calculated as the conditional probability~\( p(x_1,\ldots,x_{n+1}) = p(x_{n+1}|x_1,\ldots,x_n)p(x_1,\ldots,x_n) \), where we get the next-token prediction~\( p(x_{n+1}|x_1,\ldots,x_n) \) from the generator model.
+Here, \(n\)~denotes the beam width and \(s\)~is based on the probability~\(p(x_1,\ldots,x_n)\) of each sequence~\(\mathbf{x} = [x_1,\ldots,x_n]\).
+We start with the a sequence only containing the start token and then subsequently expand with new tokens from the vocabulary, until we either see the end-of-sequence token or hit a configurable maximum length.
+The probability for a new sequence \(\mathbf{\hat x} = [x_1,\ldots,x_{n+1}]\) with the new token \(x_{n+1}\) is then calculated as the conditional probability
+\[ p(x_1,\ldots,x_{n+1}) = p(x_{n+1}|x_1,\ldots,x_n)p(x_1,\ldots,x_n) \]
+where we get the next-token prediction~\( p(x_{n+1}|x_1,\ldots,x_n) \) from the model's generator layer.
 The scoring function~\(s\) is used to model maximum length~\(n_\text{max}\), length penalization with factor~\(\alpha_L\)~\cite{WuSCLNMKCGMKSJL2016}, and to block repeated trigrams~\cite{PaulusXS2018}:
 \begin{align*}
     s(x_1,\ldots,x_n) = \begin{cases}
         0 & \text{if} n > n_\text{max} \\
-        0 & \text{if \([x_{n-2},x_{n-1},x_n]\) occurs before in  \([x_1,\ldots,x_n]\)} \\
+        0 & \text{if \([x_{n-2},x_{n-1},x_n]\) occurs} \\
+        & \quad\text{before in  \([x_1,\ldots,x_n]\)} \\
         p(x_1,\ldots,x_n) / \frac{(5 + n)^{\alpha_L}}{(5 + 1)^{\alpha_L}} & \text{else}
     \end{cases}
 \end{align*}
@@ -77,7 +80,7 @@ Even though we were unable to test the beam search implementation as we lack a t
 \subsection{Summary Quality}
 
 Due to not having a trained model, we are unable to automatically or manually assess summary quality for the \BertSumAbs model.
-We originally planned to automatically measure unigram overlap~(\RougeN{1}) and bigram overlap~(\RougeN{2}) between generated and ground truth summaries to assess informativeness and the longest common subsequence~(\RougeL) to assess fluency in terms of the \Rouge framework~\cite{Lin2004}.
+We originally planned to automatically measure unigram overlap~(\RougeN{1}) and bigram overlap~(\RougeN{2}) between generated and ground truth summaries to assess informativeness as well as the longest common subsequence~(\RougeL) to assess fluency in terms of the \Rouge framework~\cite{Lin2004}.
 \input{figures/quality-levels.tex}
 Additionally we planned to randomly select a small subset of generated summaries to be judged by human annotators in the three quality levels shown in Table~\ref{quality-levels}.
-With the missing quality evaluation we cannot argue whether the \Rouge scores reported by \citeauthor{LiuL2019} could be reproduced or not~\cite{LiuL2019}.
+Though, as we are unable to evaluate summary quality without being able to train the summarization model, we cannot argue whether the \Rouge scores reported by \citeauthor{LiuL2019} could be reproduced or not~\cite{LiuL2019}.
