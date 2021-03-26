@@ -38,36 +38,46 @@ The \TransformerAbsTiny is designed to be trainable even on low-performance mach
 
 Following the implementation of \cite{LiuL2019}, we planned to fine-tune the \BertSumAbs model for 200\,000 steps, but with gradient accumulation after each step~\cite{LiuL2019}. We save snapshots of the model, its weights, and its optimizers every 2500 steps.
 Like \citeauthor{LiuL2019}, we implement a custom training schedule with separate learning rates for the pretrained encoder~(\(\eta_E\)) and randomly initialized decoder~(\(\eta_D\)):
-\begin{align}
+\begin{align*}
     \eta_E &= 2e^{-3} \cdot \min( \text{step}^{-0.5},\ \text{step} \cdot 20\,000^{-1.5} ) \\
     \eta_D &= 0.1 \cdot \min( \text{step}^{-0.5},\ \text{step} \cdot 10\,000^{-1.5} )
-\end{align}
+\end{align*}
 Both encoder and decoder are trained using Adam optimizers with the above learning rates, \(\beta_1 = 0.9\)~and~\(\beta_2 = 0.999\).
+Cross entropy between the token probabilities predicted by the model and the observed, one-hot ground truth probabilities is used as classification loss for training the models. We do not apply label-smoothing like \citeauthor{LiuL2019} do~\cite{LiuL2019}.
 
-Unfortunately, on our hardware (an A100 GPU) we were unable to train the model for the full 200\,000 steps but had to cancel training after 22\,500 steps.
-Figure~\ref{training-loss-bert-abs} shows that the loss quickly begins to oscillate after ony 25 steps, the oscillation continues to the end of training.
+Unfortunately, on our hardware (using an A100 GPU) we were unable to train the model for the full 200\,000 steps but instead had to cancel training after 22\,500 steps.
+\input{figures/training-loss-bert-abs.tex}
+Figure~\ref{training-loss-bert-abs} shows that the loss when training \BertSumAbs quickly begins to oscillate after ony 25 steps. The oscillation continues to the end of training.
 \citeauthor{ZhangWKWA2020} suggest that changes in the optimizer can in some cases cause instabilities in the fine-tuning process~\cite{ZhangWKWA2020}.
 Given that the \Bert encoder and transformer decoder of the \BertSumAbs model are trained with custom learning rates and Adam optimizers, we ask whether these complex hyperparameter settings are causing fine-tuning issues.
 A more detailed analysis has to be conducted to test if the issues can be circumvented by training with different random seeds~\cite{DodgeISFHS2020}.
 But new approaches that also fine-tune pretrained language models for abstractive summarization suggest an improvement by using trust regions~\cite{AghajanyanSGGZG2020}.
 It is also notable that training the \BertSumAbs model on the A100 GPU used about 40GB of memory at a speed of about 9 steps per minute.
 Though the memory usage is comparable to the memory usage reported by \citeauthor{LiuL2019}~\cite{LiuL2019}.
+\input{figures/training-loss-transformer-abs.tex}
+The small \TransformerAbsTiny model was only trained on the less powerful GeForce MX150 GPU for the first 200 training steps, but as shown in Figure~\ref{training-loss-transformer-abs}, the loss decreases more stable than for the \BertSumAbs model.
 
 \subsection{Beam Search}
 
-Describe simple tests/examples for checking implementation correctness. (Untrained model produces nonsense summaries.)
+In addition to the transformer encoder-decoder model, we also reimplement the beam search algorithm with parameters used by \citeauthor{LiuL2019}.
+In each iteration of the beam search algorithm we keep track of the best \(n\)~sequences based on a scoring function~\(s\).
+Here, \(n\)~denotes the beam width and \(s\) is usually based on the probability~\(p(x_1,\ldots,x_n)\) of each sequence \(\mathbf{x} = [x_1,\ldots,x_n]\).
+We start with the empty sequence and subsequently expand with a new token from the vocabulary, until we either see the end-of-sequence token or hit a configurable maximum length.
+The probability for new sequence \(\mathbf{\hat x} = [x_1,\ldots,x_{n+1}]\) with the new token \(x_{n+1}\) is then calculated as the conditional probability~\( p(x_1,\ldots,x_{n+1}) = p(x_{n+1}|x_1,\ldots,x_n)p(x_1,\ldots,x_n) \), where we get the next-token prediction~\( p(x_{n+1}|x_1,\ldots,x_n) \) from the generator model.
+The scoring function~\(s\) is used to model maximum length~\(n_\text{max}\), length penalization with factor~\(\alpha_L\)~\cite{WuSCLNMKCGMKSJL2016}, and to block repeated trigrams~\cite{PaulusXS2018}:
+\begin{align*}
+    s(x_1,\ldots,x_n) = \begin{cases}
+        0 & \text{if} n > n_\text{max} \\
+        0 & \text{if \([x_{n-2},x_{n-1},x_n]\) occurs before in  \([x_1,\ldots,x_n]\)} \\
+        p(x_1,\ldots,x_n) / \frac{(5 + n)^{\alpha_L}}{(5 + 1)^{\alpha_L}} & \text{else}
+    \end{cases}
+\end{align*}
+Even though we were unable to test the beam search implementation as we lack a trained model for computing~\( p(x_{n+1}|x_1,\ldots,x_n) \), we confirm that on a untrained model random nonsense sequences of arbitrary length are generated that all have very low probability.
 
-\subsection{Experiments}
+\subsection{Summary Quality}
 
-Describe experiment reproductions.
-
-\paragraph{Training Loss}
-
-\input{figures/training-loss-bert-abs.tex}
-\input{figures/training-loss-transformer-abs.tex}
-
-\paragraph{Summary Quality}
-
-Describe \Rouge scores for some examples.
-
-Describe/list difficulties or problems. (Pretrained data not available from a data source that allows automatic downloads.)
+Due to not having a trained model, we are unable to automatically or manually assess summary quality for the \BertSumAbs model.
+We originally planned to automatically measure unigram overlap~(\RougeN{1}) and bigram overlap~(\RougeN{2}) between generated and ground truth summaries to assess informativeness and the longest common subsequence~(\RougeL) to assess fluency in terms of the \Rouge framework~\cite{Lin2004}.
+\input{figures/quality-levels.tex}
+Additionally we planned to randomly select a small subset of generated summaries to be judged by human annotators in the three quality levels shown in Table~\ref{quality-levels}.
+With the missing quality evaluation we cannot argue whether the \Rouge scores reported by \citeauthor{LiuL2019} could be reproduced or not~\cite{LiuL2019}.
