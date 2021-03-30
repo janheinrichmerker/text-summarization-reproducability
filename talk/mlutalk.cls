@@ -1,21 +1,27 @@
 %! Class = mlutalk
-%! Author = Fachschaftsrat Mathematik/Informatik der Studierendenschaft der Martin-Luther-Universität Halle-Wittenberg
-%! Date = 2020/04/20
+%! Author = Jan Heinrich Reimer
+%! Date = 2020/03/10
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{mlutalk}[2020/04/20 v1.0]
+\ProvidesClass{mlutalk}[2020/03/10 v0.1]
+
+% Load base class (report) and basic utilities.
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{beamer}}
+\ProcessOptions\relax
+\LoadClass[xcolor=x11names]{beamer}
 
 % Encoding:
 \RequirePackage[utf8]{inputenc}
 \RequirePackage[T1]{fontenc}
 
-% Load base class (report) and basic utilities.
-\LoadClass{beamer}
-
 % Basic utilities:
 \RequirePackage{babel}
-\RequirePackage{xcolor}
 \RequirePackage{graphicx}
+\RequirePackage{tikz}
+\usetikzlibrary{arrows,shapes,fit,fadings}
+\tikzset{line/.style={draw,-latex'}}
+\RequirePackage{pgfplots}
+\pgfplotsset{compat=1.16}
 \RequirePackage{hyperref}
 
 % Page layout:
@@ -25,30 +31,22 @@
 \RequirePackage{libertine}
 \RequirePackage{eulervm} % "Euler Maths" font for maths.
 \RequirePackage[ttdefault]{sourcecodepro} % "Source Code Pro" font for monospace (code).
-\RequirePackage{microtype}\DisableLigatures{family=tt*} % Disable ligatures for monospace fonts.
+\RequirePackage{fontawesome5} % Icon font.
+
+% Text structure
 \RequirePackage{relsize}
-\renewcommand{\UrlFont}{\ttfamily\smaller}
 \newcommand{\textttsmall}[1]{\texttt{\smaller #1}}
 \newcommand{\query}[1]{\textttsmall{#1}}
 \newcommand{\domain}[1]{\href{http://#1}{\mbox{\textttsmall{#1}}}}
-\setbeamerfont{title}{series=\bfseries,parent=structure}
+
+% Beamer text settings:
 \usefonttheme[onlymath]{serif}
+\setbeamerfont{title}{series=\bfseries,parent=structure}
+\setbeamersize{description width=2em}
 
 % Math:
-\RequirePackage{amsmath,amsthm,amssymb,amstext,array,cancel}
-\newcommand{\union}{\cup}
-\newcommand{\disjunction}{\uplus}
-\newcommand{\intersection}{\cap}
-\newcommand{\intersect}{\cap}
-\newcommand{\infinity}{\infty}
-\newcommand{\corresponds}{\triangleq}
-\newcommand{\C}{\mathbb{C}} \newcommand{\complexnumbers}{\C} % Complex numbers.
-\newcommand{\R}{\mathbb{R}} \newcommand{\realnumbers}{\R} % Real numbers.
-\newcommand{\Q}{\mathbb{Q}} \newcommand{\rationalnumbers}{\Q} % Rational numbers.
-\newcommand{\Z}{\mathbb{Z}} \newcommand{\wholenumbers}{\Z} % Whole numbers.
-\newcommand{\N}{\mathbb{N}} \newcommand{\naturalnumbers}{\N} % Natural numbers.
-\newcommand{\B}{\mathbb{B}} \newcommand{\binarynumbers}{\B} % Binary numbers.
-\renewcommand{\O}{\mathcal{O}} % asymptotic O-Notation
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
 
 % Swap commands for better style.
 \let\tmp\mod \let\mod\bmod \let\bmod\tmp
@@ -56,46 +54,55 @@
 \let\tmp\epsilon \let\epsilon\varepsilon \let\varepsilon\tmp
 \let\tmp\phi \let\phi\varphi \let\varphi\tmp
 
-\newcommand{\eqtransform}{\ensuremath{\qquad\big|\,\,}} % Equivalence transformation
-\newcommand{\ditto}{\textquotedbl} \newcommand{\dito}{\ditto} % "Ditto" sign
-\renewcommand{\qed}{\nopagebreak\hfill\ensuremath{\square}} % End of proof: "quod erat demonstrandum"
-
 % Bibliography & cites:
-\RequirePackage{csquotes} % Anführungszeichen und direkte Zitate
+\RequirePackage[autostyle=true]{csquotes} % Anführungszeichen und direkte Zitate
 \RequirePackage[
-    bibstyle=authoryear,
-    citestyle=alphabetic,
-    % url=false,isbn=false, % Exclude URLs/ISBNs from bibliography items.
-    dashed=false, % Repeat author name in bibliography.
+	backend=biber,
+	style=authoryear, % Don't group bibliography items.
+	citestyle=alphabetic, % Cite using short-code of author and year.
+	maxnames=1,
+	url=false,doi=false,isbn=false, % Exclude URLs/DOIs/ISBNs from bibliography items.
+	dashed=false, % Repeat author name in bibliography.
+	mincrossrefs=1000, % Don't include cross-references.
 ]{biblatex}
-\renewcommand{\bibfont}{\scriptsize}
-\AtEveryCite{\smaller\color{fg!40!bg}} % Make cites appear smaller and slightly transparent.
-\setcounter{biburlnumpenalty}{100}
-\setcounter{biburlucpenalty}{100}
-\setcounter{biburllcpenalty}{100}
+\renewcommand{\bibfont}{\smaller} % Shrink bibliography font.
+\renewcommand{\pgfuseimage}[1]{\includegraphics[scale=.65]{#1}} % Shrink bibliography images.
+\setlength{\bibhang}{0pt} % Remove hanging indent in bibliography list.
+\AtEveryCite{\smaller\color{fg!60!bg}} % Make cites appear smaller and slightly transparent.
 
 % Standard frames:
 \newcommand{\bibliographyframe}{
-    \begin{frame}[allowframebreaks]{\bibname}
-        \begin{thebibliography}{long-name}
-            \beamertemplatebookbibitems
-            \printbibliography
-        \end{thebibliography}
-    \end{frame}
+\begin{frame}[t,allowframebreaks]{References}
+	\begin{thebibliography}{10}
+		\beamertemplatebookbibitems
+		\printbibliography
+		% References
+	\end{thebibliography}
+\end{frame}
 }
 \newcommand{\titleframe}{
-    \begin{frame}
-        \titlepage
-        % Title frame
-    \end{frame}
+	\begingroup
+	\setbeamertemplate{navigation symbols}{}
+	\frame[plain]{\titlepage}
+	\endgroup
 }
 
 % Beamer behavior:
 \setbeamercovered{transparent} % Show covered elements slightly transparent instead of hiding them completely.
+\setbeamertemplate{frametitle continuation}[from second][\usebeamercolor{normal text}\color{fg!40!bg}\insertcontinuationtext] % Indicator for continued slides.
+
+\RequirePackage{apptools}
 \beamertemplatenavigationsymbolsempty % Hide navigation controls.
-\setbeamertemplate{frametitle continuation}[from second][\usebeamercolor{normal text}\color{fg!30!bg}\insertcontinuationtext] % Indicator for continued slides.
-\setbeamertemplate{footline}[frame number] % Show frame number.
-\setbeamertemplate{page number in head/foot}[framenumber]
+\addtobeamertemplate{navigation symbols}{}{%
+	\usebeamerfont{footline}%
+	\usebeamercolor[fg]{footline}%
+	\quad%
+	\raisebox{0.5ex}{\IfAppendix{A-}{}\insertframenumber/\inserttotalframenumber}%
+	\enskip%
+	\vspace{0.5ex}%
+}
+
+
 \RequirePackage{appendixnumberbeamer} % Restart frame numbering at appendix.
 \defbeamertemplate{description item}{align left}{\insertdescriptionitem\hfill}
 \setbeamertemplate{description item}[align left]
@@ -113,8 +120,16 @@
 \newcommand{\contra}{\item[\(\bm{-}\)]} % Contra item
 
 % "Thank you!" banner.
-\newcommand{\thankyouname}{}
-\addto\captionsenglish{\renewcommand{\thankyouname}{Thank you!}}
-\addto\captionsgerman{\renewcommand{\thankyouname}{Vielen Dank!}}
-\addto\captionsngerman{\renewcommand{\thankyouname}{Vielen Dank!}}
+\newcommand{\thankyouname}{Thank you!}
 \newcommand{\thankyou}{\vfill\hfill\emph{\thankyouname}}
+
+% Performance measures:
+\newcommand{\ndcg}[1]{nDCG\def\tempndcg{#1}\ifx\tempndcg\empty\else{@}\tempndcg\fi}
+\newcommand{\map}{MAP}
+
+% Retrieval scores:
+\newcommand{\okapibm}{BM25}
+\newcommand{\okapibmbody}{BM25@body}
+
+% Deduplication strategies:
+\newcommand{\nov}{\textit{NOV}}
