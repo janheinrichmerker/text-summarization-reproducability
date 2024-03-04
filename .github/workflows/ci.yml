@@ -6,7 +6,7 @@ on:
 jobs:
   build-latex:
     name: "🏗️ LaTeX build"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: "📥 Check-out"
         uses: actions/checkout@v2
@@ -22,7 +22,7 @@ jobs:
           name: Paper
   build-julia:
     name: "🏗️ Julia build"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: "📥 Check-out"
         uses: actions/checkout@v2
@@ -45,7 +45,7 @@ jobs:
         uses: julia-actions/julia-buildpkg@v1
   test-julia:
     name: "🧪 Julia test"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs:
       - build-julia
     steps:
