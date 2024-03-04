@@ -16,7 +16,7 @@ jobs:
           working_directory: paper
           root_file: paper.tex
       - name: "📤 Upload paper"
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           path: paper/paper.pdf
           name: Paper
@@ -71,7 +71,7 @@ jobs:
       - name: "📊 Process test coverage"
         uses: julia-actions/julia-processcoverage@v1
       - name: "📤 Upload test coverage"
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           path: lcov.info
           name: Julia test coverage
