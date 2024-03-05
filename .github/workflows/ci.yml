@@ -5,77 +5,59 @@ on:
 
 jobs:
   build-latex:
-    name: "🏗️ LaTeX build"
+    name: 🏗️ LaTeX build
     runs-on: ubuntu-latest
     steps:
-      - name: "📥 Check-out"
+      - name: 📥 Check-out
         uses: actions/checkout@v4
-      - name: "🏗️ Compile paper"
+      - name: 🏗️ Compile paper
         uses: xu-cheng/latex-action@v3
         with:
           working_directory: paper
           root_file: paper.tex
-      - name: "📤 Upload paper"
+      - name: 📤 Upload paper
         uses: actions/upload-artifact@v4
         with:
           path: paper/paper.pdf
           name: Paper
   build-julia:
-    name: "🏗️ Julia build"
+    name: 🏗️ Julia build
     runs-on: ubuntu-latest
     steps:
-      - name: "📥 Check-out"
+      - name: 📥 Check-out
         uses: actions/checkout@v4
-      - name: "🧰 Install Julia"
+      - name: 🧰 Install Julia
         uses: julia-actions/setup-julia@v1
         with:
-          version: "1.5"
-      - name: "💾 Cache artifacts"
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
-            ${{ runner.os }}-
-      - name: "🏗️ Build package"
+          version: '1.5'
+      - name: 💾 Cache Julia artifacts and packages
+        uses: julia-actions/cache@v1
+      - name: 🏗️ Build package
         uses: julia-actions/julia-buildpkg@v1
   test-julia:
-    name: "🧪 Julia test"
+    name: 🧪 Julia test
     runs-on: ubuntu-latest
     needs:
       - build-julia
     steps:
-      - name: "📥 Check-out"
+      - name: 📥 Check-out
         uses: actions/checkout@v4
-      - name: "🧰 Install Julia"
+      - name: 🧰 Install Julia
         uses: julia-actions/setup-julia@v1
         with:
-          version: "1.5"
-      - name: "💾 Cache artifacts"
-        uses: actions/cache@v4
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
-            ${{ runner.os }}-
-      - name: "🧪 Run tests"
+          version: '1.5'
+      - name: 💾 Cache Julia artifacts and packages
+        uses: julia-actions/cache@v1
+      - name: 🧪 Run tests
         uses: julia-actions/julia-runtest@v1
-      - name: "📊 Process test coverage"
+      - name: 📊 Process test coverage
         uses: julia-actions/julia-processcoverage@v1
-      - name: "📤 Upload test coverage"
+      - name: 📤 Upload test coverage
         uses: actions/upload-artifact@v4
         with:
           path: lcov.info
           name: Julia test coverage
-      - name: "📤 Publish test coverage"
+      - name: 📤 Publish test coverage
         uses: codecov/codecov-action@v4
         with:
           file: lcov.info
